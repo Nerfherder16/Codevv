@@ -45,12 +45,12 @@ async def get_current_user(
     if token is None:
         if settings.environment == "development":
             # Return or create a dev user
-            result = await db.execute(select(User).where(User.email == "dev@buildhub.local"))
+            result = await db.execute(select(User).where(User.email == "dev@foundry.local"))
             user = result.scalar_one_or_none()
             if not user:
                 user = User(
                     id=uuid.uuid4(),
-                    email="dev@buildhub.local",
+                    email="dev@foundry.local",
                     display_name="Dev User",
                     password_hash=hash_password("dev"),
                     avatar_url=None,

@@ -11,7 +11,6 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  FolderOpen,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 
@@ -48,9 +47,13 @@ export function Sidebar() {
     >
       {/* Header */}
       <div className="flex items-center gap-2 p-4 border-b border-gray-200 dark:border-gray-800">
-        <FolderOpen className="w-6 h-6 text-blue-500 shrink-0" />
+        <img
+          src="/foundrylogo.png"
+          alt="Foundry"
+          className="w-7 h-7 shrink-0 rounded"
+        />
         {!collapsed && (
-          <span className="font-bold text-lg truncate">Build Hub</span>
+          <span className="font-bold text-lg truncate">Foundry</span>
         )}
       </div>
 

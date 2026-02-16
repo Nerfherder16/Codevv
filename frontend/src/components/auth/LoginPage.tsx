@@ -60,9 +60,11 @@ export function LoginPage() {
       <div className="w-full max-w-md">
         {/* Logo / branding */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Build Hub
-          </h1>
+          <img
+            src="/foundrylogo.png"
+            alt="Foundry"
+            className="w-48 mx-auto mb-4"
+          />
           <p className="text-gray-500 dark:text-gray-400 mt-2">
             {mode === "login"
               ? "Sign in to your account"
