@@ -67,12 +67,17 @@ async def list_documents(
     project = await get_project_with_access(project_id, user, db)
     domain = f"codevv:{project.slug}"
     results = await browse_recall(domain, limit=50, memory_types=["semantic"])
-    return [
-        {
-            "id": r.get("id"),
-            "filename": r.get("metadata", {}).get("filename", "unknown"),
-            "content_type": r.get("metadata", {}).get("content_type"),
-            "created_at": r.get("created_at"),
-        }
-        for r in results
-    ]
+    docs = []
+    for r in results:
+        meta = r.get("metadata") or r.get("extra") or {}
+        if isinstance(meta, str):
+            meta = {}
+        docs.append(
+            {
+                "id": r.get("id"),
+                "filename": meta.get("filename") or r.get("filename", "unknown"),
+                "content_type": meta.get("content_type") or r.get("content_type"),
+                "created_at": r.get("created_at") or r.get("timestamp"),
+            }
+        )
+    return docs
