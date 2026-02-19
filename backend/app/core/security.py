@@ -30,9 +30,13 @@ def create_access_token(user_id: str, email: str) -> str:
 
 def decode_token(token: str) -> dict:
     try:
-        return jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
+        return jwt.decode(
+            token, settings.jwt_secret, algorithms=[settings.jwt_algorithm]
+        )
     except JWTError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
+        )
 
 
 async def get_current_user(
@@ -45,12 +49,14 @@ async def get_current_user(
     if token is None:
         if settings.environment == "development":
             # Return or create a dev user
-            result = await db.execute(select(User).where(User.email == "dev@foundry.local"))
+            result = await db.execute(
+                select(User).where(User.email == "dev@codevv.local")
+            )
             user = result.scalar_one_or_none()
             if not user:
                 user = User(
                     id=uuid.uuid4(),
-                    email="dev@foundry.local",
+                    email="dev@codevv.local",
                     display_name="Dev User",
                     password_hash=hash_password("dev"),
                     avatar_url=None,
@@ -58,15 +64,21 @@ async def get_current_user(
                 db.add(user)
                 await db.flush()
             return user
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated"
+        )
 
     payload = decode_token(token)
     user_id = payload.get("sub")
     if not user_id:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token payload")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token payload"
+        )
 
     result = await db.execute(select(User).where(User.id == uuid.UUID(user_id)))
     user = result.scalar_one_or_none()
     if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found"
+        )
     return user

@@ -4,9 +4,7 @@ from functools import lru_cache
 
 class Settings(BaseSettings):
     # Database
-    database_url: str = (
-        "postgresql+asyncpg://foundry:foundry_dev@localhost:5432/foundry"
-    )
+    database_url: str = "postgresql+asyncpg://codevv:codevv_dev@localhost:5432/codevv"
 
     # Redis
     redis_url: str = "redis://localhost:6379/0"
@@ -40,7 +38,7 @@ class Settings(BaseSettings):
 
     # App
     environment: str = "development"
-    app_name: str = "Foundry"
+    app_name: str = "Codevv"
     cors_origins: list[str] = ["http://localhost:5173"]
 
     model_config = {"env_file": ".env", "extra": "ignore"}

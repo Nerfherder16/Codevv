@@ -20,21 +20,52 @@ import {
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 
-const NAV_ITEMS = [
-  { to: "", icon: LayoutDashboard, label: "Overview", end: true },
-  { to: "rules", icon: BookOpen, label: "Business Rules" },
-  { to: "canvas", icon: Pencil, label: "Canvas" },
-  { to: "ideas", icon: Lightbulb, label: "Idea Vault" },
-  { to: "scaffold", icon: Code2, label: "Code Scaffold" },
-  { to: "knowledge", icon: Share2, label: "Knowledge Graph" },
-  { to: "dependencies", icon: GitBranch, label: "Dependency Map" },
-  { to: "pipeline", icon: Workflow, label: "Pipeline" },
-  { to: "solana", icon: Coins, label: "Blockchain" },
-  { to: "rooms", icon: Video, label: "Video Rooms" },
-  { to: "deploy", icon: Rocket, label: "Deploy" },
-  { to: "audit", icon: ClipboardCheck, label: "Audit Prep" },
-  { to: "compliance", icon: Shield, label: "Launch Readiness" },
-  { to: "settings", icon: Settings, label: "Settings" },
+interface NavItem {
+  to: string;
+  icon: React.ElementType;
+  label: string;
+  end?: boolean;
+}
+
+interface NavGroup {
+  label: string;
+  items: NavItem[];
+}
+
+const NAV_GROUPS: NavGroup[] = [
+  {
+    label: "Core",
+    items: [
+      { to: "", icon: LayoutDashboard, label: "Overview", end: true },
+      { to: "canvas", icon: Pencil, label: "Canvas" },
+      { to: "ideas", icon: Lightbulb, label: "Idea Vault" },
+      { to: "knowledge", icon: Share2, label: "Knowledge Graph" },
+    ],
+  },
+  {
+    label: "Build",
+    items: [
+      { to: "scaffold", icon: Code2, label: "Code Scaffold" },
+      { to: "pipeline", icon: Workflow, label: "Pipeline" },
+      { to: "dependencies", icon: GitBranch, label: "Dependency Map" },
+      { to: "deploy", icon: Rocket, label: "Deploy" },
+    ],
+  },
+  {
+    label: "Platform",
+    items: [
+      { to: "rules", icon: BookOpen, label: "Business Rules" },
+      { to: "solana", icon: Coins, label: "Blockchain" },
+      { to: "rooms", icon: Video, label: "Video Rooms" },
+    ],
+  },
+  {
+    label: "Operations",
+    items: [
+      { to: "audit", icon: ClipboardCheck, label: "Audit Prep" },
+      { to: "compliance", icon: Shield, label: "Launch Readiness" },
+    ],
+  },
 ];
 
 export function Sidebar() {
@@ -60,25 +91,64 @@ export function Sidebar() {
       {/* Header */}
       <div className="flex items-center gap-2 p-4 border-b border-gray-200 dark:border-gray-800">
         <img
-          src="/foundrylogo.png"
-          alt="Foundry"
+          src="/codevvicon.png"
+          alt="Codevv"
           className="w-9 h-9 shrink-0 rounded"
         />
         {!collapsed && (
-          <span className="font-bold text-lg truncate">Foundry</span>
+          <span className="font-bold text-lg truncate">Codevv</span>
         )}
       </div>
 
       {/* Nav */}
       <nav className="flex-1 py-2 overflow-y-auto">
-        {NAV_ITEMS.map((item) => (
+        {NAV_GROUPS.map((group) => (
+          <div key={group.label} className="mb-1">
+            {!collapsed && (
+              <div className="px-4 pt-4 pb-1.5">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-gray-400 dark:text-gray-600">
+                  {group.label}
+                </span>
+              </div>
+            )}
+            {collapsed && <div className="pt-2" />}
+            {group.items.map((item) => (
+              <NavLink
+                key={item.to}
+                to={`${basePath}/${item.to}`}
+                end={item.end}
+                className={({ isActive }) =>
+                  cn(
+                    "flex items-center gap-3 px-4 py-2 mx-2 rounded-lg text-sm transition-colors relative",
+                    isActive
+                      ? "bg-teal/10 text-teal font-medium nav-active"
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-white/[0.04]",
+                  )
+                }
+              >
+                {({ isActive }) => (
+                  <>
+                    {isActive && (
+                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-teal rounded-r" />
+                    )}
+                    <item.icon className="w-5 h-5 shrink-0" />
+                    {!collapsed && (
+                      <span className="truncate">{item.label}</span>
+                    )}
+                  </>
+                )}
+              </NavLink>
+            ))}
+          </div>
+        ))}
+
+        {/* Settings — always at the bottom of nav */}
+        <div className="mt-auto pt-2 border-t border-gray-200 dark:border-gray-800 mx-2">
           <NavLink
-            key={item.to}
-            to={`${basePath}/${item.to}`}
-            end={item.end}
+            to={`${basePath}/settings`}
             className={({ isActive }) =>
               cn(
-                "flex items-center gap-3 px-4 py-2.5 mx-2 rounded-lg text-sm transition-colors relative",
+                "flex items-center gap-3 px-4 py-2 rounded-lg text-sm transition-colors relative",
                 isActive
                   ? "bg-teal/10 text-teal font-medium nav-active"
                   : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-white/[0.04]",
@@ -90,12 +160,12 @@ export function Sidebar() {
                 {isActive && (
                   <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-teal rounded-r" />
                 )}
-                <item.icon className="w-5 h-5 shrink-0" />
-                {!collapsed && <span className="truncate">{item.label}</span>}
+                <Settings className="w-5 h-5 shrink-0" />
+                {!collapsed && <span className="truncate">Settings</span>}
               </>
             )}
           </NavLink>
-        ))}
+        </div>
       </nav>
 
       {/* Collapse toggle */}

@@ -98,7 +98,7 @@ export function LoginPage() {
             transition={{ duration: 0.6 }}
           >
             <img
-              src="/foundrylogo.png"
+              src="/codevvicon.png"
               alt=""
               className="w-10 h-10 opacity-80"
             />
@@ -124,8 +124,8 @@ export function LoginPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.9, delay: 0.15, ease }}
             >
-              Plan, design, and deploy your software architecture
-              with AI that understands your codebase.
+              Plan, design, and deploy your software architecture with AI that
+              understands your codebase.
             </motion.p>
           </div>
 
@@ -183,11 +183,7 @@ export function LoginPage() {
         >
           {/* Mobile logo */}
           <div className="lg:hidden mb-12 text-center">
-            <img
-              src="/foundrylogo.png"
-              alt="Foundry"
-              className="w-28 mx-auto"
-            />
+            <img src="/codevvlogo.png" alt="Codevv" className="w-28 mx-auto" />
           </div>
 
           {/* Heading with animated swap */}
@@ -205,8 +201,8 @@ export function LoginPage() {
                 </h2>
                 <p className="text-gray-600 mt-3 text-sm">
                   {mode === "login"
-                    ? "Sign in to continue to Foundry"
-                    : "Create your Foundry account"}
+                    ? "Sign in to continue to Codevv"
+                    : "Create your Codevv account"}
                 </p>
               </motion.div>
             </AnimatePresence>
@@ -323,7 +319,7 @@ export function LoginPage() {
           <div className="mt-10 flex items-center gap-4">
             <div className="h-px flex-1 bg-white/[0.04]" />
             <span className="text-[10px] text-gray-700 uppercase tracking-[0.2em]">
-              Foundry
+              Codevv
             </span>
             <div className="h-px flex-1 bg-white/[0.04]" />
           </div>
