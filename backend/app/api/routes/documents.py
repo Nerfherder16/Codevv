@@ -85,11 +85,10 @@ async def list_documents(
             if ":" in t:
                 key, _, val = t.partition(":")
                 tag_map[key] = val
-        # Skip non-document memories (only show tagged uploads)
-        if "type" in tag_map and tag_map["type"] != "document":
+        # Only show memories explicitly tagged as documents
+        if tag_map.get("type") != "document":
             continue
-        # If no type tag, still show but try to get filename
-        filename = tag_map.get("filename") or r.get("filename", "unknown")
+        filename = tag_map.get("filename", "unknown")
         content_type = tag_map.get("content_type") or r.get("content_type")
         docs.append(
             {
