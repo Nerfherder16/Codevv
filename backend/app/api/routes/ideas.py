@@ -84,8 +84,7 @@ async def create_idea(
     except Exception:
         pass  # Knowledge propagation is best-effort
 
-    idea.votes = []
-    idea.comments = []
+    await db.refresh(idea, ["votes", "comments"])
     return build_idea_response(idea)
 
 
