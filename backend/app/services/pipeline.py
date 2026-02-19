@@ -27,7 +27,6 @@ async def create_run(
     )
     db.add(run)
     await db.flush()
-    run.findings = []
     return run
 
 

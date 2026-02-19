@@ -70,7 +70,20 @@ async def trigger_run(
 ):
     await get_project_with_access(project_id, user, db, min_role=ProjectRole.editor)
     run = await create_run(project_id, req.agent_type, req.input_json, user.id, db)
-    return _build_run_response(run)
+    return AgentRunResponse(
+        id=run.id,
+        project_id=run.project_id,
+        agent_type=run.agent_type,
+        status=run.status,
+        input_json=run.input_json,
+        output_json=run.output_json,
+        error_message=run.error_message,
+        started_at=run.started_at,
+        completed_at=run.completed_at,
+        created_by=run.created_by,
+        created_at=run.created_at,
+        findings_count=0,
+    )
 
 
 @router.get("/{run_id}", response_model=AgentRunDetailResponse)

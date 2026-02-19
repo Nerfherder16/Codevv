@@ -41,8 +41,9 @@ async def browse_recall(
     domain: str,
     limit: int = 50,
     memory_types: list[str] | None = None,
+    query: str = "*",
 ) -> list[dict]:
-    payload: dict = {"domain": domain, "limit": limit}
+    payload: dict = {"query": query, "domains": [domain], "limit": limit}
     if memory_types:
         payload["memory_types"] = memory_types
     data = await _recall_post("/search/browse", json=payload)

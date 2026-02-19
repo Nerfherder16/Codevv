@@ -78,8 +78,66 @@ async def create_checklist(
     )
     db.add(cl)
     await db.flush()
-    cl.checks = []
-    return _build_checklist_response(cl)
+    return ChecklistResponse(
+        id=cl.id,
+        project_id=cl.project_id,
+        name=cl.name,
+        description=cl.description,
+        created_by=cl.created_by,
+        created_at=cl.created_at,
+        checks_count=0,
+        pass_rate=0.0,
+    )
+
+
+# Static path MUST come before /{checklist_id} path parameter
+@router.get("/readiness", response_model=LaunchReadinessResponse)
+async def launch_readiness(
+    project_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    await get_project_with_access(project_id, user, db)
+    result = await db.execute(
+        select(ComplianceChecklist)
+        .where(ComplianceChecklist.project_id == project_id)
+        .options(selectinload(ComplianceChecklist.checks))
+    )
+    checklists = result.scalars().unique().all()
+
+    all_checks: list[ComplianceCheck] = []
+    for cl in checklists:
+        all_checks.extend(cl.checks or [])
+
+    total = len(all_checks)
+    passed = sum(1 for c in all_checks if c.status == CheckStatus.passed)
+    failed = sum(1 for c in all_checks if c.status == CheckStatus.failed)
+    overall_score = (passed / total * 100) if total > 0 else 0.0
+
+    # Per-category scores
+    category_scores: dict[str, float] = {}
+    for cat in CheckCategory:
+        cat_checks = [c for c in all_checks if c.category == cat]
+        if cat_checks:
+            cat_passed = sum(1 for c in cat_checks if c.status == CheckStatus.passed)
+            category_scores[cat.value] = round(cat_passed / len(cat_checks) * 100, 1)
+        else:
+            category_scores[cat.value] = 0.0
+
+    blockers = [
+        CheckResponse.model_validate(c)
+        for c in all_checks
+        if c.status == CheckStatus.failed
+    ]
+
+    return LaunchReadinessResponse(
+        overall_score=round(overall_score, 1),
+        category_scores=category_scores,
+        blockers=blockers,
+        total=total,
+        passed=passed,
+        failed=failed,
+    )
 
 
 @router.get("/{checklist_id}", response_model=ChecklistDetailResponse)
@@ -170,52 +228,3 @@ async def update_check(
     check.updated_by = user.id
     await db.flush()
     return CheckResponse.model_validate(check)
-
-
-@router.get("/readiness", response_model=LaunchReadinessResponse)
-async def launch_readiness(
-    project_id: uuid.UUID,
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    await get_project_with_access(project_id, user, db)
-    result = await db.execute(
-        select(ComplianceChecklist)
-        .where(ComplianceChecklist.project_id == project_id)
-        .options(selectinload(ComplianceChecklist.checks))
-    )
-    checklists = result.scalars().unique().all()
-
-    all_checks: list[ComplianceCheck] = []
-    for cl in checklists:
-        all_checks.extend(cl.checks or [])
-
-    total = len(all_checks)
-    passed = sum(1 for c in all_checks if c.status == CheckStatus.passed)
-    failed = sum(1 for c in all_checks if c.status == CheckStatus.failed)
-    overall_score = (passed / total * 100) if total > 0 else 0.0
-
-    # Per-category scores
-    category_scores: dict[str, float] = {}
-    for cat in CheckCategory:
-        cat_checks = [c for c in all_checks if c.category == cat]
-        if cat_checks:
-            cat_passed = sum(1 for c in cat_checks if c.status == CheckStatus.passed)
-            category_scores[cat.value] = round(cat_passed / len(cat_checks) * 100, 1)
-        else:
-            category_scores[cat.value] = 0.0
-
-    blockers = [
-        CheckResponse.model_validate(c)
-        for c in all_checks
-        if c.status == CheckStatus.failed
-    ]
-
-    return LaunchReadinessResponse(
-        overall_score=round(overall_score, 1),
-        category_scores=category_scores,
-        blockers=blockers,
-        total=total,
-        passed=passed,
-        failed=failed,
-    )
