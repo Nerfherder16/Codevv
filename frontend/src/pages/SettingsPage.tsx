@@ -20,14 +20,12 @@ import { Card } from "../components/common/Card";
 import { PageHeader } from "../components/common/PageHeader";
 import { PageLoading } from "../components/common/LoadingSpinner";
 import { Modal } from "../components/common/Modal";
+import { Input, TextArea, Select } from "../components/common/Input";
+import { ROLE_COLORS } from "../lib/constants";
 
 const ROLES: ProjectRole[] = ["owner", "editor", "viewer"];
 
-const roleColors: Record<ProjectRole, string> = {
-  owner: "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300",
-  editor: "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300",
-  viewer: "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400",
-};
+// Using ROLE_COLORS from constants
 
 export function SettingsPage() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -211,12 +209,11 @@ export function SettingsPage() {
               >
                 Name <span className="text-red-500">*</span>
               </label>
-              <input
+              <Input
                 id="projectName"
                 type="text"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
               />
             </div>
             <div>
@@ -226,13 +223,13 @@ export function SettingsPage() {
               >
                 Description
               </label>
-              <textarea
+              <TextArea
                 id="projectDesc"
                 value={editDesc}
                 onChange={(e) => setEditDesc(e.target.value)}
                 rows={3}
                 placeholder="A brief description of the project..."
-                className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 resize-none"
+                className="resize-none"
               />
             </div>
             <div className="flex justify-end">
@@ -265,7 +262,7 @@ export function SettingsPage() {
           {project.members.map((member) => (
             <Card key={member.id} className="flex items-center gap-3">
               {/* Avatar */}
-              <div className="flex items-center justify-center w-9 h-9 rounded-full bg-blue-600 text-white text-sm font-semibold shrink-0">
+              <div className="flex items-center justify-center w-9 h-9 rounded-full bg-gradient-to-br from-teal to-coral text-white text-sm font-semibold shrink-0">
                 {member.display_name
                   .split(" ")
                   .map((w) => w[0])
@@ -282,7 +279,7 @@ export function SettingsPage() {
                 </p>
               </div>
               <span
-                className={`text-xs font-medium px-2 py-0.5 rounded-full ${roleColors[member.role]}`}
+                className={`text-xs font-medium px-2 py-0.5 rounded-full ${ROLE_COLORS[member.role] || ROLE_COLORS.viewer}`}
               >
                 {member.role}
               </span>
@@ -314,7 +311,7 @@ export function SettingsPage() {
             </div>
             <button
               onClick={toggleTheme}
-              className="relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/20 bg-gray-200 dark:bg-blue-600"
+              className="relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-teal/20 bg-gray-200 dark:bg-teal"
             >
               <span
                 className={`inline-flex items-center justify-center h-6 w-6 rounded-full bg-white shadow-sm transition-transform ${
@@ -322,9 +319,9 @@ export function SettingsPage() {
                 }`}
               >
                 {theme === "dark" ? (
-                  <Moon className="w-3.5 h-3.5 text-blue-600" />
+                  <Moon className="w-3.5 h-3.5 text-teal" />
                 ) : (
-                  <Sun className="w-3.5 h-3.5 text-amber-500" />
+                  <Sun className="w-3.5 h-3.5 text-teal" />
                 )}
               </span>
             </button>
@@ -379,14 +376,13 @@ export function SettingsPage() {
             >
               Email <span className="text-red-500">*</span>
             </label>
-            <input
+            <Input
               id="memberEmail"
               type="email"
               value={memberEmail}
               onChange={(e) => setMemberEmail(e.target.value)}
               placeholder="user@example.com"
               autoFocus
-              className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             />
           </div>
           <div>
@@ -396,18 +392,17 @@ export function SettingsPage() {
             >
               Role
             </label>
-            <select
+            <Select
               id="memberRole"
               value={memberRole}
               onChange={(e) => setMemberRole(e.target.value as ProjectRole)}
-              className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             >
               {ROLES.map((r) => (
                 <option key={r} value={r}>
                   {r.charAt(0).toUpperCase() + r.slice(1)}
                 </option>
               ))}
-            </select>
+            </Select>
             <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
               <span className="font-medium">Owner:</span> full access |{" "}
               <span className="font-medium">Editor:</span> read/write |{" "}
@@ -458,12 +453,12 @@ export function SettingsPage() {
               Type <span className="font-mono font-bold">{project.name}</span>{" "}
               to confirm
             </label>
-            <input
+            <Input
               type="text"
               value={archiveConfirmText}
               onChange={(e) => setArchiveConfirmText(e.target.value)}
               placeholder={project.name}
-              className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/20"
+              error
             />
           </div>
 

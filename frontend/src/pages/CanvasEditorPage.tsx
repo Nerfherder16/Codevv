@@ -20,6 +20,7 @@ import type { CanvasDetail, CanvasComponent } from "../types";
 import { useToast } from "../contexts/ToastContext";
 import { Button } from "../components/common/Button";
 import { PageLoading } from "../components/common/LoadingSpinner";
+import { Input, Select, TextArea } from "../components/common/Input";
 
 const COMPONENT_TYPES = [
   "service",
@@ -45,7 +46,8 @@ const typeColors: Record<ComponentType, string> = {
   service: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300",
   database:
     "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300",
-  queue: "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300",
+  queue:
+    "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300",
   cache:
     "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300",
   frontend: "bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-300",
@@ -238,13 +240,13 @@ export function CanvasEditorPage() {
                   >
                     Name <span className="text-red-500">*</span>
                   </label>
-                  <input
+                  <Input
                     id="compName"
                     type="text"
                     value={compName}
                     onChange={(e) => setCompName(e.target.value)}
                     placeholder="e.g. User Service"
-                    className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-1.5 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                    className="py-1.5"
                   />
                 </div>
 
@@ -255,20 +257,20 @@ export function CanvasEditorPage() {
                   >
                     Type
                   </label>
-                  <select
+                  <Select
                     id="compType"
                     value={compType}
                     onChange={(e) =>
                       setCompType(e.target.value as ComponentType)
                     }
-                    className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-1.5 text-sm text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                    className="py-1.5"
                   >
                     {COMPONENT_TYPES.map((t) => (
                       <option key={t} value={t}>
                         {t.charAt(0).toUpperCase() + t.slice(1)}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
 
                 <div>
@@ -278,13 +280,13 @@ export function CanvasEditorPage() {
                   >
                     Tech Stack
                   </label>
-                  <input
+                  <Input
                     id="compTech"
                     type="text"
                     value={compTechStack}
                     onChange={(e) => setCompTechStack(e.target.value)}
                     placeholder="e.g. FastAPI, PostgreSQL"
-                    className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-1.5 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                    className="py-1.5"
                   />
                 </div>
 
@@ -295,13 +297,13 @@ export function CanvasEditorPage() {
                   >
                     Description
                   </label>
-                  <textarea
+                  <TextArea
                     id="compDesc"
                     value={compDescription}
                     onChange={(e) => setCompDescription(e.target.value)}
                     placeholder="What does this component do?"
                     rows={2}
-                    className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-1.5 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 resize-none"
+                    className="py-1.5 resize-none"
                   />
                 </div>
 

@@ -17,10 +17,11 @@ import { Card } from "../components/common/Card";
 import { PageHeader } from "../components/common/PageHeader";
 import { PageLoading } from "../components/common/LoadingSpinner";
 import { relativeTime, formatDate } from "../lib/utils";
+import { Input } from "../components/common/Input";
 
 const statusColors: Record<IdeaStatus, string> = {
   draft: "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400",
-  proposed: "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300",
+  proposed: "bg-teal/10 text-teal",
   approved:
     "bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300",
   rejected: "bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300",
@@ -40,7 +41,7 @@ function feasibilityColor(score: number): string {
   if (score >= 0.7)
     return "bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300";
   if (score >= 0.4)
-    return "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300";
+    return "bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300";
   return "bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300";
 }
 
@@ -218,7 +219,7 @@ export function IdeaDetailPage() {
                     onClick={() => handleStatusChange(s)}
                     className={`block w-full text-left px-3 py-1.5 text-xs hover:bg-gray-100 dark:hover:bg-gray-800 ${
                       s === idea.status
-                        ? "font-semibold text-blue-600 dark:text-blue-400"
+                        ? "font-semibold text-teal"
                         : "text-gray-700 dark:text-gray-300"
                     }`}
                   >
@@ -279,7 +280,7 @@ export function IdeaDetailPage() {
       {idea.feasibility_score !== null && (
         <Card className="mb-6">
           <div className="flex items-start gap-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 shrink-0">
+            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-teal/10 text-teal shrink-0">
               <Sparkles className="w-5 h-5" />
             </div>
             <div className="flex-1">
@@ -302,7 +303,7 @@ export function IdeaDetailPage() {
                     idea.feasibility_score >= 0.7
                       ? "bg-green-500"
                       : idea.feasibility_score >= 0.4
-                        ? "bg-amber-500"
+                        ? "bg-yellow-500"
                         : "bg-red-500"
                   }`}
                   style={{ width: `${idea.feasibility_score * 100}%` }}
@@ -339,7 +340,7 @@ export function IdeaDetailPage() {
               <Card key={comment.id} className="py-3">
                 <div className="flex items-start gap-3">
                   {/* User avatar placeholder */}
-                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 text-white text-xs font-semibold shrink-0">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-teal text-white text-xs font-semibold shrink-0">
                     {comment.user_id.slice(0, 2).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -363,12 +364,12 @@ export function IdeaDetailPage() {
 
         {/* Add comment form */}
         <form onSubmit={handleAddComment} className="flex gap-2">
-          <input
+          <Input
             type="text"
             value={commentText}
             onChange={(e) => setCommentText(e.target.value)}
             placeholder="Add a comment..."
-            className="flex-1 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            className="flex-1"
           />
           <Button type="submit" loading={submittingComment} size="md">
             <Send className="w-4 h-4" />

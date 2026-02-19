@@ -6,14 +6,30 @@ from app.models.scaffold import ScaffoldJob
 from app.models.knowledge import KnowledgeEntity, KnowledgeRelation
 from app.models.video import VideoRoom
 from app.models.deploy import Environment, DeployJob
+from app.models.pipeline import AgentRun, AgentFinding
+from app.models.solana import SolanaWatchlist
+from app.models.audit import AuditReport
+from app.models.compliance import ComplianceChecklist, ComplianceCheck
 
 __all__ = [
     "User",
-    "Project", "ProjectMember",
-    "Canvas", "CanvasComponent",
-    "Idea", "IdeaVote", "IdeaComment",
+    "Project",
+    "ProjectMember",
+    "Canvas",
+    "CanvasComponent",
+    "Idea",
+    "IdeaVote",
+    "IdeaComment",
     "ScaffoldJob",
-    "KnowledgeEntity", "KnowledgeRelation",
+    "KnowledgeEntity",
+    "KnowledgeRelation",
     "VideoRoom",
-    "Environment", "DeployJob",
+    "Environment",
+    "DeployJob",
+    "AgentRun",
+    "AgentFinding",
+    "SolanaWatchlist",
+    "AuditReport",
+    "ComplianceChecklist",
+    "ComplianceCheck",
 ]

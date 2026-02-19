@@ -4,6 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Foundry</title>
+    <link rel="preconnect" href="https://api.fontshare.com" crossorigin />
+    <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap" rel="stylesheet" />
     <script>
       // Theme init (prevent flash)
       const t = localStorage.getItem("bh-theme") || "dark";
@@ -11,7 +13,7 @@
       document.documentElement.classList.toggle("dark", t === "dark");
     </script>
   </head>
-  <body class="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100">
+  <body class="min-h-screen bg-cream dark:bg-black text-gray-900 dark:text-gray-100">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

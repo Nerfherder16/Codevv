@@ -29,6 +29,8 @@ import { Card } from "../components/common/Card";
 import { PageHeader } from "../components/common/PageHeader";
 import { PageLoading } from "../components/common/LoadingSpinner";
 import { Modal } from "../components/common/Modal";
+import { Input, Select } from "../components/common/Input";
+import { EmptyState, GraphIllustration } from "../components/common/EmptyState";
 import { relativeTime } from "../lib/utils";
 
 const ENTITY_TYPES = [
@@ -47,7 +49,7 @@ const RELATION_TYPES = [
 const entityTypeColors: Record<string, string> = {
   concept: "#8b5cf6", // violet
   technology: "#3b82f6", // blue
-  decision: "#f59e0b", // amber
+  decision: "#F07167", // coral
   component: "#10b981", // emerald
 };
 
@@ -56,8 +58,7 @@ const entityTypeBadge: Record<string, string> = {
     "bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300",
   technology:
     "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300",
-  decision:
-    "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300",
+  decision: "bg-coral/10 text-coral",
   component:
     "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300",
 };
@@ -564,7 +565,7 @@ export function KnowledgeGraphPage() {
           <form onSubmit={handleSearch} className="flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
+              <Input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => {
@@ -572,7 +573,7 @@ export function KnowledgeGraphPage() {
                   if (!e.target.value.trim()) setSearchResults(null);
                 }}
                 placeholder="Semantic search..."
-                className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                className="pl-9"
               />
             </div>
             <Button size="sm" type="submit" loading={searching}>
@@ -583,13 +584,13 @@ export function KnowledgeGraphPage() {
           {/* Type filter */}
           <div className="flex items-center gap-2">
             <Filter className="w-4 h-4 text-gray-400 shrink-0" />
-            <select
+            <Select
               value={typeFilter}
               onChange={(e) => {
                 setTypeFilter(e.target.value);
                 setSearchResults(null);
               }}
-              className="flex-1 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-1.5 text-xs text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:outline-none"
+              className="flex-1 px-2 py-1.5 text-xs"
             >
               <option value="">All types</option>
               {ENTITY_TYPES.map((t) => (
@@ -597,7 +598,7 @@ export function KnowledgeGraphPage() {
                   {t}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
 
           {/* Entity list */}
@@ -648,30 +649,30 @@ export function KnowledgeGraphPage() {
               Add Entity
             </p>
             <form onSubmit={handleAddEntity} className="space-y-2">
-              <input
+              <Input
                 type="text"
                 value={addName}
                 onChange={(e) => setAddName(e.target.value)}
                 placeholder="Entity name"
-                className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-1.5 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                className="py-1.5"
               />
-              <select
+              <Select
                 value={addType}
                 onChange={(e) => setAddType(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-1.5 text-sm text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:outline-none"
+                className="py-1.5"
               >
                 {ENTITY_TYPES.map((t) => (
                   <option key={t} value={t}>
                     {t}
                   </option>
                 ))}
-              </select>
-              <input
+              </Select>
+              <Input
                 type="text"
                 value={addDesc}
                 onChange={(e) => setAddDesc(e.target.value)}
                 placeholder="Description (optional)"
-                className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-1.5 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                className="py-1.5"
               />
               <Button
                 type="submit"
@@ -690,10 +691,10 @@ export function KnowledgeGraphPage() {
         <div className="flex-1 flex flex-col min-w-0">
           {/* Graph controls */}
           <div className="flex items-center gap-2 mb-3">
-            <select
+            <Select
               value={startNodeId}
               onChange={(e) => setStartNodeId(e.target.value)}
-              className="flex-1 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:outline-none"
+              className="flex-1"
             >
               <option value="">Select start node...</option>
               {entities.map((e) => (
@@ -701,7 +702,7 @@ export function KnowledgeGraphPage() {
                   {e.name} ({e.entity_type})
                 </option>
               ))}
-            </select>
+            </Select>
             <Button
               size="sm"
               onClick={handleTraverse}
@@ -759,10 +760,9 @@ export function KnowledgeGraphPage() {
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Source Entity <span className="text-red-500">*</span>
             </label>
-            <select
+            <Select
               value={relSourceId}
               onChange={(e) => setRelSourceId(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             >
               <option value="">Select source...</option>
               {entities.map((e) => (
@@ -770,34 +770,32 @@ export function KnowledgeGraphPage() {
                   {e.name} ({e.entity_type})
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Relation Type <span className="text-red-500">*</span>
             </label>
-            <select
+            <Select
               value={relType}
               onChange={(e) => setRelType(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             >
               {RELATION_TYPES.map((t) => (
                 <option key={t} value={t}>
                   {t.replace(/_/g, " ")}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Target Entity <span className="text-red-500">*</span>
             </label>
-            <select
+            <Select
               value={relTargetId}
               onChange={(e) => setRelTargetId(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             >
               <option value="">Select target...</option>
               {entities.map((e) => (
@@ -805,7 +803,7 @@ export function KnowledgeGraphPage() {
                   {e.name} ({e.entity_type})
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
 
           <div className="flex justify-end gap-2 pt-2">

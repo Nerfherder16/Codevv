@@ -29,13 +29,14 @@ import { PageHeader } from "../components/common/PageHeader";
 import { PageLoading } from "../components/common/LoadingSpinner";
 import { Modal } from "../components/common/Modal";
 import { relativeTime } from "../lib/utils";
+import { Select } from "../components/common/Input";
+import { EmptyState, CodeIllustration } from "../components/common/EmptyState";
 
 const statusColors: Record<ScaffoldStatus, string> = {
   pending: "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400",
   generating:
-    "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300",
-  review:
-    "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300",
+    "bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300",
+  review: "bg-teal/10 text-teal",
   approved:
     "bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300",
   rejected: "bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300",
@@ -117,7 +118,7 @@ function FileTreeItem({
         }}
         className={`w-full flex items-center gap-1.5 px-2 py-1 text-left text-xs rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${
           isSelected
-            ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
+            ? "bg-teal/10 text-teal"
             : "text-gray-700 dark:text-gray-300"
         }`}
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
@@ -127,12 +128,12 @@ function FileTreeItem({
             <ChevronRight
               className={`w-3 h-3 transition-transform ${open ? "rotate-90" : ""}`}
             />
-            <Folder className="w-3.5 h-3.5 text-amber-500" />
+            <Folder className="w-3.5 h-3.5 text-teal" />
           </>
         ) : (
           <>
             <span className="w-3" />
-            <FileCode className="w-3.5 h-3.5 text-blue-500" />
+            <FileCode className="w-3.5 h-3.5 text-teal" />
           </>
         )}
         <span className="truncate">{node.name}</span>
@@ -363,19 +364,13 @@ export function ScaffoldPage() {
 
       {/* Job list */}
       {jobs.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-64 text-center">
-          <Hammer className="w-12 h-12 text-gray-400 dark:text-gray-600 mb-3" />
-          <p className="text-gray-500 dark:text-gray-400 text-lg font-medium">
-            No scaffold jobs yet
-          </p>
-          <p className="text-gray-400 dark:text-gray-500 text-sm mt-1 mb-4">
-            Select components from a canvas and generate code.
-          </p>
-          <Button onClick={openNewModal} size="sm">
-            <Plus className="w-4 h-4" />
-            New Scaffold
-          </Button>
-        </div>
+        <EmptyState
+          icon={<CodeIllustration />}
+          title="No scaffold jobs yet"
+          description="Select components from a canvas and generate code."
+          actionLabel="New Scaffold"
+          onAction={openNewModal}
+        />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {jobs.map((job) => (
@@ -469,11 +464,10 @@ export function ScaffoldPage() {
             >
               Canvas <span className="text-red-500">*</span>
             </label>
-            <select
+            <Select
               id="scaffoldCanvas"
               value={selectedCanvasId}
               onChange={(e) => setSelectedCanvasId(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             >
               <option value="">Select a canvas...</option>
               {canvases.map((c) => (
@@ -481,7 +475,7 @@ export function ScaffoldPage() {
                   {c.name} ({c.component_count} components)
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
 
           {/* Components checklist */}
@@ -495,7 +489,7 @@ export function ScaffoldPage() {
                   <button
                     type="button"
                     onClick={selectAllComponents}
-                    className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                    className="text-xs text-teal hover:underline"
                   >
                     {selectedComponentIds.size === components.length
                       ? "Deselect All"
@@ -505,7 +499,7 @@ export function ScaffoldPage() {
               </div>
               {loadingComponents ? (
                 <div className="flex items-center justify-center py-6">
-                  <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
+                  <Loader2 className="w-5 h-5 animate-spin text-teal" />
                 </div>
               ) : components.length === 0 ? (
                 <p className="text-sm text-gray-400 dark:text-gray-500 py-2">
@@ -522,7 +516,7 @@ export function ScaffoldPage() {
                         type="checkbox"
                         checked={selectedComponentIds.has(comp.id)}
                         onChange={() => toggleComponent(comp.id)}
-                        className="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
+                        className="rounded border-gray-300 dark:border-gray-600 text-teal focus:ring-teal"
                       />
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
@@ -589,7 +583,7 @@ export function ScaffoldPage() {
               {selectedFile && previewJob.generated_files[selectedFile] ? (
                 <div>
                   <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-200 dark:border-gray-700">
-                    <FileCode className="w-4 h-4 text-blue-500" />
+                    <FileCode className="w-4 h-4 text-teal" />
                     <span className="text-sm font-mono text-gray-700 dark:text-gray-300">
                       {selectedFile}
                     </span>

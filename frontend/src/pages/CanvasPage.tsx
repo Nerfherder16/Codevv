@@ -10,6 +10,12 @@ import { PageHeader } from "../components/common/PageHeader";
 import { PageLoading } from "../components/common/LoadingSpinner";
 import { Modal } from "../components/common/Modal";
 import { relativeTime } from "../lib/utils";
+import { Input } from "../components/common/Input";
+import { PageTransition } from "../components/common/PageTransition";
+import {
+  EmptyState,
+  CanvasIllustration,
+} from "../components/common/EmptyState";
 
 export function CanvasPage() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -101,19 +107,13 @@ export function CanvasPage() {
 
       {/* Canvas grid */}
       {canvases.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-64 text-center">
-          <Layers className="w-12 h-12 text-gray-400 dark:text-gray-600 mb-3" />
-          <p className="text-gray-500 dark:text-gray-400 text-lg font-medium">
-            No canvases yet
-          </p>
-          <p className="text-gray-400 dark:text-gray-500 text-sm mt-1 mb-4">
-            Create a canvas to start designing your architecture.
-          </p>
-          <Button onClick={() => setModalOpen(true)} size="sm">
-            <Plus className="w-4 h-4" />
-            Create Canvas
-          </Button>
-        </div>
+        <EmptyState
+          icon={<CanvasIllustration />}
+          title="No canvases yet"
+          description="Create a canvas to start designing your architecture."
+          actionLabel="Create Canvas"
+          onAction={() => setModalOpen(true)}
+        />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {canvases.map((canvas) => (
@@ -126,7 +126,7 @@ export function CanvasPage() {
               className="flex flex-col justify-between"
             >
               <div className="flex items-start gap-3">
-                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 shrink-0">
+                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-teal/10 text-teal shrink-0">
                   <Pencil className="w-5 h-5" />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -159,14 +159,13 @@ export function CanvasPage() {
             >
               Canvas Name <span className="text-red-500">*</span>
             </label>
-            <input
+            <Input
               id="canvasName"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Backend Architecture"
               autoFocus
-              className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             />
           </div>
           <div className="flex justify-end gap-2 pt-2">

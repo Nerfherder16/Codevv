@@ -63,6 +63,9 @@ services:
       YJS_URL: "ws://yjs-server:1234"
       JWT_SECRET: "dev-secret-change-in-production"
       ENVIRONMENT: "development"
+      RECALL_URL: "http://192.168.50.19:8200"
+      GITHUB_TOKEN: "${GITHUB_TOKEN:-}"
+      SOLANA_RPC_URL: "https://api.devnet.solana.com"
     volumes:
       - ./backend/app:/app/app
     depends_on:
@@ -79,6 +82,9 @@ services:
       REDIS_URL: "redis://redis:6379/0"
       OLLAMA_URL: "http://192.168.50.62:11434"
       JWT_SECRET: "dev-secret-change-in-production"
+      RECALL_URL: "http://192.168.50.19:8200"
+      GITHUB_TOKEN: "${GITHUB_TOKEN:-}"
+      SOLANA_RPC_URL: "https://api.devnet.solana.com"
     depends_on:
       postgres:
         condition: service_healthy

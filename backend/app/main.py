@@ -1,10 +1,24 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from app.core.config import get_settings
 from app.core.database import init_db
-from app.api.routes import auth, projects, canvases, ideas, scaffold, knowledge, video, deploy
+from app.api.routes import (
+    auth,
+    projects,
+    canvases,
+    ideas,
+    scaffold,
+    knowledge,
+    video,
+    deploy,
+    rules,
+    dependencies,
+    pipeline,
+    solana,
+    audit,
+    compliance,
+)
 import structlog
 
 structlog.configure(
@@ -50,6 +64,12 @@ app.include_router(scaffold.router, prefix="/api")
 app.include_router(knowledge.router, prefix="/api")
 app.include_router(video.router, prefix="/api")
 app.include_router(deploy.router, prefix="/api")
+app.include_router(rules.router, prefix="/api")
+app.include_router(dependencies.router, prefix="/api")
+app.include_router(pipeline.router, prefix="/api")
+app.include_router(solana.router, prefix="/api")
+app.include_router(audit.router, prefix="/api")
+app.include_router(compliance.router, prefix="/api")
 
 
 @app.get("/health")

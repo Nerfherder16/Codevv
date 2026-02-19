@@ -10,6 +10,17 @@ import { PageHeader } from "../components/common/PageHeader";
 import { PageLoading } from "../components/common/LoadingSpinner";
 import { Modal } from "../components/common/Modal";
 import { relativeTime } from "../lib/utils";
+import { Input } from "../components/common/Input";
+import { TextArea } from "../components/common/Input";
+import {
+  PageTransition,
+  StaggerList,
+  StaggerItem,
+} from "../components/common/PageTransition";
+import {
+  EmptyState,
+  FolderIllustration,
+} from "../components/common/EmptyState";
 
 export function ProjectListPage() {
   const navigate = useNavigate();
@@ -78,7 +89,7 @@ export function ProjectListPage() {
   }
 
   return (
-    <div>
+    <PageTransition>
       <PageHeader
         title="Projects"
         description="Your workspaces for building and collaborating."
@@ -92,19 +103,13 @@ export function ProjectListPage() {
 
       {/* Project grid */}
       {projects.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-64 text-center">
-          <FolderOpen className="w-12 h-12 text-gray-400 dark:text-gray-600 mb-3" />
-          <p className="text-gray-500 dark:text-gray-400 text-lg font-medium">
-            No projects yet
-          </p>
-          <p className="text-gray-400 dark:text-gray-500 text-sm mt-1 mb-4">
-            Create your first project to get started.
-          </p>
-          <Button onClick={() => setModalOpen(true)} size="sm">
-            <Plus className="w-4 h-4" />
-            Create Project
-          </Button>
-        </div>
+        <EmptyState
+          icon={<FolderIllustration />}
+          title="No projects yet"
+          description="Create your first project to get started."
+          actionLabel="Create Project"
+          onAction={() => setModalOpen(true)}
+        />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {projects.map((project) => (
@@ -149,14 +154,13 @@ export function ProjectListPage() {
             >
               Project Name <span className="text-red-500">*</span>
             </label>
-            <input
+            <Input
               id="projectName"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="My Awesome Project"
               autoFocus
-              className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             />
           </div>
           <div>
@@ -166,13 +170,12 @@ export function ProjectListPage() {
             >
               Description
             </label>
-            <textarea
+            <TextArea
               id="projectDesc"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="What are you building?"
               rows={3}
-              className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 resize-none"
             />
           </div>
           <div className="flex justify-end gap-2 pt-2">
@@ -185,6 +188,6 @@ export function ProjectListPage() {
           </div>
         </form>
       </Modal>
-    </div>
+    </PageTransition>
   );
 }

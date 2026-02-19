@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
+declare const require: (module: string) => Record<string, unknown>;
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
@@ -18,6 +20,8 @@ import { PageHeader } from "../components/common/PageHeader";
 import { PageLoading } from "../components/common/LoadingSpinner";
 import { Modal } from "../components/common/Modal";
 import { relativeTime } from "../lib/utils";
+import { Input } from "../components/common/Input";
+import { EmptyState, VideoIllustration } from "../components/common/EmptyState";
 
 /* ---------- LiveKit video component ---------- */
 
@@ -34,9 +38,10 @@ let VideoConference: React.ComponentType | null = null;
 
 try {
   // Dynamic import attempt - will be available if @livekit/components-react is installed
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const lk = require("@livekit/components-react");
-  LiveKitRoom = lk.LiveKitRoom;
-  VideoConference = lk.VideoConference;
+  LiveKitRoom = lk.LiveKitRoom as typeof LiveKitRoom;
+  VideoConference = lk.VideoConference as typeof VideoConference;
 } catch {
   // LiveKit components not installed - we'll show a fallback
 }
@@ -250,25 +255,19 @@ export function VideoRoomsPage() {
 
       {/* Room list */}
       {rooms.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-64 text-center">
-          <Video className="w-12 h-12 text-gray-400 dark:text-gray-600 mb-3" />
-          <p className="text-gray-500 dark:text-gray-400 text-lg font-medium">
-            No rooms yet
-          </p>
-          <p className="text-gray-400 dark:text-gray-500 text-sm mt-1 mb-4">
-            Create a video room to start collaborating with your team.
-          </p>
-          <Button onClick={() => setCreateModalOpen(true)} size="sm">
-            <Plus className="w-4 h-4" />
-            Create Room
-          </Button>
-        </div>
+        <EmptyState
+          icon={<VideoIllustration />}
+          title="No rooms yet"
+          description="Create a video room to start collaborating with your team."
+          actionLabel="Create Room"
+          onAction={() => setCreateModalOpen(true)}
+        />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {rooms.map((room) => (
             <Card key={room.id} className="flex flex-col">
               <div className="flex items-start gap-3">
-                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-violet-50 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 shrink-0">
+                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-teal/10 text-teal shrink-0">
                   <Video className="w-5 h-5" />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -339,14 +338,13 @@ export function VideoRoomsPage() {
             >
               Room Name <span className="text-red-500">*</span>
             </label>
-            <input
+            <Input
               id="roomName"
               type="text"
               value={roomName}
               onChange={(e) => setRoomName(e.target.value)}
               placeholder="e.g. Sprint Planning"
               autoFocus
-              className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             />
           </div>
           <div className="flex justify-end gap-2 pt-2">

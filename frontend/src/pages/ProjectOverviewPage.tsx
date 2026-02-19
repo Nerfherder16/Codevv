@@ -9,6 +9,12 @@ import { PageHeader } from "../components/common/PageHeader";
 import { PageLoading } from "../components/common/LoadingSpinner";
 import { Button } from "../components/common/Button";
 import { relativeTime } from "../lib/utils";
+import {
+  PageTransition,
+  StaggerList,
+  StaggerItem,
+} from "../components/common/PageTransition";
+import { STATUS_COLORS, ROLE_COLORS } from "../lib/constants";
 
 interface QuickLinkProps {
   icon: React.ReactNode;
@@ -20,7 +26,7 @@ interface QuickLinkProps {
 function QuickLink({ icon, label, count, onClick }: QuickLinkProps) {
   return (
     <Card hover onClick={onClick} className="flex items-center gap-4">
-      <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
+      <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-teal/10 text-teal">
         {icon}
       </div>
       <div className="flex-1 min-w-0">
@@ -92,15 +98,8 @@ export function ProjectOverviewPage() {
     );
   }
 
-  const roleColors: Record<string, string> = {
-    owner:
-      "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300",
-    editor: "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300",
-    viewer: "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400",
-  };
-
   return (
-    <div>
+    <PageTransition>
       <PageHeader
         title={project.name}
         description={project.description || undefined}
@@ -152,7 +151,7 @@ export function ProjectOverviewPage() {
             {project.members.map((member) => (
               <Card key={member.id} className="flex items-center gap-3">
                 {/* Avatar placeholder */}
-                <div className="flex items-center justify-center w-9 h-9 rounded-full bg-blue-600 text-white text-sm font-semibold shrink-0">
+                <div className="flex items-center justify-center w-9 h-9 rounded-full bg-gradient-to-br from-teal to-coral text-white text-sm font-semibold shrink-0">
                   {member.display_name
                     .split(" ")
                     .map((w) => w[0])
@@ -169,7 +168,7 @@ export function ProjectOverviewPage() {
                   </p>
                 </div>
                 <span
-                  className={`text-xs font-medium px-2 py-0.5 rounded-full ${roleColors[member.role] || roleColors.viewer}`}
+                  className={`text-xs font-medium px-2 py-0.5 rounded-full ${ROLE_COLORS[member.role] || ROLE_COLORS.viewer}`}
                 >
                   {member.role}
                 </span>
@@ -241,19 +240,6 @@ export function ProjectOverviewPage() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {ideas.slice(0, 6).map((idea) => {
-              const statusColors: Record<string, string> = {
-                draft:
-                  "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400",
-                proposed:
-                  "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300",
-                approved:
-                  "bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300",
-                rejected:
-                  "bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300",
-                implemented:
-                  "bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300",
-              };
-
               return (
                 <Card
                   key={idea.id}
@@ -270,7 +256,7 @@ export function ProjectOverviewPage() {
                       </p>
                       <div className="flex items-center gap-2 mt-1">
                         <span
-                          className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusColors[idea.status] || statusColors.draft}`}
+                          className={`text-xs font-medium px-2 py-0.5 rounded-full ${STATUS_COLORS[idea.status] || STATUS_COLORS.draft}`}
                         >
                           {idea.status}
                         </span>
@@ -286,6 +272,6 @@ export function ProjectOverviewPage() {
           </div>
         </section>
       )}
-    </div>
+    </PageTransition>
   );
 }

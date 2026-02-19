@@ -216,3 +216,178 @@ export interface DeployJob {
   created_by: string;
   created_at: string;
 }
+
+// Business Rules (Recall)
+export interface RecallMemory {
+  id: string;
+  content: string;
+  domain: string | null;
+  tags: string[];
+  importance: number | null;
+  pinned: boolean;
+  created_at: string | null;
+}
+
+// Dependency Map
+export interface DependencyNode {
+  id: string;
+  name: string;
+  component_type: string;
+  tech_stack: string | null;
+  canvas_id: string | null;
+}
+
+export interface DependencyEdge {
+  source_id: string;
+  target_id: string;
+  relation_type: string;
+  weight: number | null;
+}
+
+export interface DependencyGraph {
+  nodes: DependencyNode[];
+  edges: DependencyEdge[];
+  stats: { node_count: number; edge_count: number; max_depth: number };
+}
+
+// Agent Pipeline
+export type AgentType = "scaffold" | "feasibility" | "embedding" | "custom";
+
+export type RunStatus =
+  | "queued"
+  | "running"
+  | "completed"
+  | "failed"
+  | "cancelled";
+
+export type FindingSeverity = "info" | "warning" | "error" | "critical";
+
+export interface AgentRun {
+  id: string;
+  project_id: string;
+  agent_type: AgentType;
+  status: RunStatus;
+  input_json: Record<string, unknown> | null;
+  output_json: Record<string, unknown> | null;
+  error_message: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  created_by: string;
+  created_at: string;
+  findings_count: number;
+}
+
+export interface AgentFinding {
+  id: string;
+  run_id: string;
+  severity: FindingSeverity;
+  title: string;
+  description: string | null;
+  file_path: string | null;
+  created_at: string;
+}
+
+export interface AgentRunDetail extends AgentRun {
+  findings: AgentFinding[];
+}
+
+// Solana
+export interface SolanaWatchlistItem {
+  id: string;
+  project_id: string;
+  label: string;
+  address: string;
+  network: string;
+  created_by: string;
+  created_at: string;
+}
+
+export interface SolanaBalance {
+  address: string;
+  lamports: number;
+  sol: number;
+}
+
+export interface SolanaTransaction {
+  signature: string;
+  slot: number | null;
+  block_time: number | null;
+  success: boolean;
+  fee: number | null;
+}
+
+// Audit
+export type AuditStatus = "generating" | "ready" | "archived";
+
+export interface AuditSection {
+  name: string;
+  items: { label: string; value: unknown }[];
+  score: number;
+  notes?: string;
+}
+
+export interface AuditReport {
+  id: string;
+  project_id: string;
+  title: string;
+  report_json: {
+    overall_score: number;
+    sections: AuditSection[];
+  } | null;
+  status: AuditStatus;
+  generated_by: string;
+  created_at: string;
+}
+
+// Compliance
+export type CheckCategory =
+  | "security"
+  | "performance"
+  | "legal"
+  | "infrastructure"
+  | "testing";
+
+export type CheckStatus =
+  | "not_started"
+  | "in_progress"
+  | "passed"
+  | "failed"
+  | "waived";
+
+export interface ComplianceCheck {
+  id: string;
+  checklist_id: string;
+  title: string;
+  description: string | null;
+  category: CheckCategory;
+  status: CheckStatus;
+  evidence_url: string | null;
+  notes: string | null;
+  assigned_to: string | null;
+  updated_at: string;
+  created_at: string;
+}
+
+export interface ComplianceChecklist {
+  id: string;
+  project_id: string;
+  name: string;
+  description: string | null;
+  created_by: string;
+  created_at: string;
+  checks_count: number;
+  pass_rate: number;
+}
+
+export interface ComplianceChecklistDetail extends ComplianceChecklist {
+  checks: ComplianceCheck[];
+}
+
+export interface LaunchReadiness {
+  overall_score: number;
+  category_scores: Record<string, number>;
+  blockers: ComplianceCheck[];
+  total: number;
+  passed: number;
+  failed: number;
+}

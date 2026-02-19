@@ -1,12 +1,29 @@
 @import "tailwindcss";
 
+@theme {
+  --color-teal: #00AFB9;
+  --color-coral: #F07167;
+  --color-cream: #FDFCDC;
+  --color-gray-950: #000000;
+  --color-gray-900: #0a0a0a;
+  --color-gray-800: #141414;
+  --color-gray-700: #1f1f1f;
+  --color-gray-600: #333333;
+  --color-gray-500: #666666;
+  --color-gray-400: #999999;
+  --color-gray-300: #b3b3b3;
+  --color-gray-200: #d4d4d4;
+  --color-gray-100: #ebebeb;
+  --color-gray-50: #f5f5f5;
+}
+
 :root {
   --sidebar-width: 240px;
   --sidebar-collapsed: 64px;
 }
 
 body {
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: "Satoshi", -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 /* Scrollbar styling */
@@ -21,7 +38,170 @@ body {
   border-radius: 3px;
 }
 
+/* Ambient background blobs */
+.bg-blobs::before,
+.bg-blobs::after {
+  content: "";
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.15;
+  pointer-events: none;
+  z-index: -1;
+}
+.bg-blobs::before {
+  width: 600px;
+  height: 600px;
+  top: -200px;
+  right: -100px;
+  background: radial-gradient(circle, #00AFB9, transparent 70%);
+}
+.bg-blobs::after {
+  width: 500px;
+  height: 500px;
+  bottom: -150px;
+  left: -100px;
+  background: radial-gradient(circle, #F07167, transparent 70%);
+}
+
+/* Glow CTA button */
+.btn-glow {
+  background: linear-gradient(135deg, #00AFB9, #0097A0, #F07167);
+  box-shadow: 0 0 20px rgba(0, 175, 185, 0.3);
+  transition: all 0.2s ease;
+}
+.btn-glow:hover {
+  box-shadow: 0 0 30px rgba(0, 175, 185, 0.5);
+  filter: brightness(1.1);
+}
+
+/* Active nav indicator */
+.nav-active {
+  box-shadow: 0 0 12px rgba(0, 175, 185, 0.3);
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #00AFB9, #008F97, #F07167);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glow card hover effect */
+.glow-card {
+  position: relative;
+  overflow: hidden;
+}
+.glow-card::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    #00AFB9 60deg,
+    #F07167 120deg,
+    transparent 180deg
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: -1;
+}
+.glow-card:hover::before {
+  opacity: 0.08;
+  animation: glow-spin 4s linear infinite;
+}
+
+@keyframes glow-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Stat card accents */
+.stat-teal {
+  border-left: 3px solid #00AFB9;
+}
+.stat-coral {
+  border-left: 3px solid #F07167;
+}
+.stat-emerald {
+  border-left: 3px solid #10b981;
+}
+.stat-purple {
+  border-left: 3px solid #8b5cf6;
+}
+
+/* Glass effect */
+.glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Grid background */
+.bg-grid {
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Focus ring override */
+*:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 175, 185, 0.3);
+}
+
+/* Entrance animation */
+.animate-in {
+  animation: animate-in 0.2s ease-out;
+}
+@keyframes animate-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Slide in from right (for toasts) */
+.slide-in-from-right {
+  animation: slide-in-right 0.2s ease-out;
+}
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 /* tldraw overrides */
 .tl-container {
   border-radius: 8px;
+}
+
+/* Skeleton shimmer */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.04) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }

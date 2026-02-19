@@ -11,17 +11,29 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  BookOpen,
+  GitBranch,
+  Workflow,
+  Coins,
+  ClipboardCheck,
+  Shield,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 
 const NAV_ITEMS = [
   { to: "", icon: LayoutDashboard, label: "Overview", end: true },
+  { to: "rules", icon: BookOpen, label: "Business Rules" },
   { to: "canvas", icon: Pencil, label: "Canvas" },
   { to: "ideas", icon: Lightbulb, label: "Idea Vault" },
   { to: "scaffold", icon: Code2, label: "Code Scaffold" },
   { to: "knowledge", icon: Share2, label: "Knowledge Graph" },
+  { to: "dependencies", icon: GitBranch, label: "Dependency Map" },
+  { to: "pipeline", icon: Workflow, label: "Pipeline" },
+  { to: "solana", icon: Coins, label: "Blockchain" },
   { to: "rooms", icon: Video, label: "Video Rooms" },
   { to: "deploy", icon: Rocket, label: "Deploy" },
+  { to: "audit", icon: ClipboardCheck, label: "Audit Prep" },
+  { to: "compliance", icon: Shield, label: "Launch Readiness" },
   { to: "settings", icon: Settings, label: "Settings" },
 ];
 
@@ -50,7 +62,7 @@ export function Sidebar() {
         <img
           src="/foundrylogo.png"
           alt="Foundry"
-          className="w-7 h-7 shrink-0 rounded"
+          className="w-9 h-9 shrink-0 rounded"
         />
         {!collapsed && (
           <span className="font-bold text-lg truncate">Foundry</span>
@@ -66,15 +78,22 @@ export function Sidebar() {
             end={item.end}
             className={({ isActive }) =>
               cn(
-                "flex items-center gap-3 px-4 py-2.5 mx-2 rounded-lg text-sm transition-colors",
+                "flex items-center gap-3 px-4 py-2.5 mx-2 rounded-lg text-sm transition-colors relative",
                 isActive
-                  ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 font-medium"
-                  : "text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800",
+                  ? "bg-teal/10 text-teal font-medium nav-active"
+                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-white/[0.04]",
               )
             }
           >
-            <item.icon className="w-5 h-5 shrink-0" />
-            {!collapsed && <span className="truncate">{item.label}</span>}
+            {({ isActive }) => (
+              <>
+                {isActive && (
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-teal rounded-r" />
+                )}
+                <item.icon className="w-5 h-5 shrink-0" />
+                {!collapsed && <span className="truncate">{item.label}</span>}
+              </>
+            )}
           </NavLink>
         ))}
       </nav>

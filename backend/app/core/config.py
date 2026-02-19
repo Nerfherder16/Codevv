@@ -4,7 +4,9 @@ from functools import lru_cache
 
 class Settings(BaseSettings):
     # Database
-    database_url: str = "postgresql+asyncpg://foundry:foundry_dev@localhost:5432/foundry"
+    database_url: str = (
+        "postgresql+asyncpg://foundry:foundry_dev@localhost:5432/foundry"
+    )
 
     # Redis
     redis_url: str = "redis://localhost:6379/0"
@@ -26,6 +28,15 @@ class Settings(BaseSettings):
 
     # Yjs
     yjs_url: str = "ws://localhost:1234"
+
+    # Recall
+    recall_url: str = "http://192.168.50.19:8200"
+
+    # GitHub
+    github_token: str = ""
+
+    # Solana
+    solana_rpc_url: str = "https://api.devnet.solana.com"
 
     # App
     environment: str = "development"
