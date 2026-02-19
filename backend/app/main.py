@@ -18,6 +18,7 @@ from app.api.routes import (
     solana,
     audit,
     compliance,
+    documents,
 )
 import structlog
 
@@ -70,6 +71,7 @@ app.include_router(pipeline.router, prefix="/api")
 app.include_router(solana.router, prefix="/api")
 app.include_router(audit.router, prefix="/api")
 app.include_router(compliance.router, prefix="/api")
+app.include_router(documents.router, prefix="/api")
 
 
 @app.get("/health")

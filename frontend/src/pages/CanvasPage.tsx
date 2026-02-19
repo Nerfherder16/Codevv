@@ -63,7 +63,7 @@ export function CanvasPage() {
       toast("Canvas created!", "success");
       setModalOpen(false);
       setName("");
-      navigate(`/projects/${projectId}/canvases/${canvas.id}`);
+      navigate(`/projects/${projectId}/canvas/${canvas.id}`);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to create canvas";
@@ -121,7 +121,7 @@ export function CanvasPage() {
               key={canvas.id}
               hover
               onClick={() =>
-                navigate(`/projects/${projectId}/canvases/${canvas.id}`)
+                navigate(`/projects/${projectId}/canvas/${canvas.id}`)
               }
               className="flex flex-col justify-between"
             >

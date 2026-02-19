@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     # Ollama
     ollama_url: str = "http://192.168.50.62:11434"
     ollama_model: str = "qwen3:14b"
-    ollama_embed_model: str = "bge-large"
+    ollama_embed_model: str = "qwen3-embedding:0.6b"
 
     # LiveKit
     livekit_url: str = "ws://localhost:7880"

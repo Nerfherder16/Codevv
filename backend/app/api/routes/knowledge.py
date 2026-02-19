@@ -1,15 +1,21 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, text
+from sqlalchemy import delete as sa_delete, select, text
 from app.core.database import get_db
 from app.core.security import get_current_user
 from app.models.user import User
 from app.models.project import ProjectRole
 from app.models.knowledge import KnowledgeEntity, KnowledgeRelation
 from app.schemas.knowledge import (
-    EntityCreate, EntityUpdate, RelationCreate,
-    EntityResponse, RelationResponse,
-    GraphTraversalRequest, GraphResponse, GraphNode, GraphEdge,
+    EntityCreate,
+    EntityUpdate,
+    RelationCreate,
+    EntityResponse,
+    RelationResponse,
+    GraphTraversalRequest,
+    GraphResponse,
+    GraphNode,
+    GraphEdge,
     SemanticSearchRequest,
 )
 from app.api.routes.projects import get_project_with_access
@@ -20,6 +26,7 @@ router = APIRouter(prefix="/projects/{project_id}/knowledge", tags=["knowledge"]
 
 
 # --- Entities ---
+
 
 @router.post("/entities", response_model=EntityResponse, status_code=201)
 async def create_entity(
@@ -91,7 +98,9 @@ async def update_entity(
 
     if req.name is not None or req.description is not None:
         try:
-            entity.embedding = await get_embedding(f"{entity.name}\n{entity.description or ''}")
+            entity.embedding = await get_embedding(
+                f"{entity.name}\n{entity.description or ''}"
+            )
         except Exception:
             pass
     await db.flush()
@@ -115,9 +124,11 @@ async def delete_entity(
     if not entity:
         raise HTTPException(status_code=404, detail="Entity not found")
     # Delete relations involving this entity
+
     await db.execute(
-        select(KnowledgeRelation).where(
-            (KnowledgeRelation.source_id == entity_id) | (KnowledgeRelation.target_id == entity_id)
+        sa_delete(KnowledgeRelation).where(
+            (KnowledgeRelation.source_id == entity_id)
+            | (KnowledgeRelation.target_id == entity_id)
         )
     )
     await db.delete(entity)
@@ -125,6 +136,7 @@ async def delete_entity(
 
 
 # --- Relations ---
+
 
 @router.post("/relations", response_model=RelationResponse, status_code=201)
 async def create_relation(
@@ -163,6 +175,7 @@ async def list_relations(
 
 # --- Graph Traversal (Recursive CTE) ---
 
+
 @router.post("/traverse", response_model=GraphResponse)
 async def traverse_graph(
     project_id: uuid.UUID,
@@ -174,7 +187,11 @@ async def traverse_graph(
 
     # Build recursive CTE query
     relation_filter = ""
-    params = {"start_id": str(req.start_id), "project_id": str(project_id), "max_depth": req.max_depth}
+    params = {
+        "start_id": str(req.start_id),
+        "project_id": str(project_id),
+        "max_depth": req.max_depth,
+    }
     if req.relation_types:
         placeholders = ", ".join(f":rt_{i}" for i in range(len(req.relation_types)))
         relation_filter = f"AND r.relation_type IN ({placeholders})"
@@ -204,7 +221,10 @@ async def traverse_graph(
     rows = result.fetchall()
     node_ids = {row.id for row in rows}
 
-    nodes = [GraphNode(id=r.id, name=r.name, entity_type=r.entity_type, depth=r.depth) for r in rows]
+    nodes = [
+        GraphNode(id=r.id, name=r.name, entity_type=r.entity_type, depth=r.depth)
+        for r in rows
+    ]
 
     # Get edges between discovered nodes
     edges_result = await db.execute(
@@ -215,7 +235,12 @@ async def traverse_graph(
         )
     )
     edges = [
-        GraphEdge(source=r.source_id, target=r.target_id, relation_type=r.relation_type, weight=r.weight)
+        GraphEdge(
+            source=r.source_id,
+            target=r.target_id,
+            relation_type=r.relation_type,
+            weight=r.weight,
+        )
         for r in edges_result.scalars().all()
     ]
 
@@ -223,6 +248,7 @@ async def traverse_graph(
 
 
 # --- Semantic Search ---
+
 
 @router.post("/search", response_model=list[EntityResponse])
 async def semantic_search(
@@ -237,17 +263,16 @@ async def semantic_search(
     except Exception:
         raise HTTPException(status_code=503, detail="Embedding service unavailable")
 
-    query = (
-        select(KnowledgeEntity)
-        .where(
-            KnowledgeEntity.project_id == project_id,
-            KnowledgeEntity.embedding.isnot(None),
-        )
+    query = select(KnowledgeEntity).where(
+        KnowledgeEntity.project_id == project_id,
+        KnowledgeEntity.embedding.isnot(None),
     )
     if req.entity_type:
         query = query.where(KnowledgeEntity.entity_type == req.entity_type)
 
-    query = query.order_by(KnowledgeEntity.embedding.cosine_distance(query_embedding)).limit(req.limit)
+    query = query.order_by(
+        KnowledgeEntity.embedding.cosine_distance(query_embedding)
+    ).limit(req.limit)
 
     result = await db.execute(query)
     return [EntityResponse.model_validate(e) for e in result.scalars().all()]

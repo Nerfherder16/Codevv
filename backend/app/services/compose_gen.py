@@ -3,7 +3,7 @@ import yaml
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
-from app.models.canvas import Canvas, CanvasComponent
+from app.models.canvas import Canvas
 
 
 # Template mapping: component_type -> docker service config
@@ -43,11 +43,18 @@ SERVICE_TEMPLATES = {
 
 async def generate_compose_from_canvas(canvas_id: uuid.UUID, db: AsyncSession) -> str:
     result = await db.execute(
-        select(Canvas).where(Canvas.id == canvas_id).options(selectinload(Canvas.components))
+        select(Canvas)
+        .where(Canvas.id == canvas_id)
+        .options(selectinload(Canvas.components))
     )
     canvas = result.scalar_one_or_none()
     if not canvas:
         raise ValueError(f"Canvas {canvas_id} not found")
+
+    if not canvas.components:
+        raise ValueError(
+            "Canvas has no components to generate a compose file from. Add components to the canvas first."
+        )
 
     services = {}
     volumes = {}
@@ -61,7 +68,9 @@ async def generate_compose_from_canvas(canvas_id: uuid.UUID, db: AsyncSession) -
         if ctype == "database":
             if "postgres" in tech or "pg" in tech:
                 svc = dict(SERVICE_TEMPLATES["database"]["postgres"])
-                svc["environment"] = {k: v.format(name=name) for k, v in svc["environment"].items()}
+                svc["environment"] = {
+                    k: v.format(name=name) for k, v in svc["environment"].items()
+                }
                 svc["volumes"] = [v.format(name=name) for v in svc["volumes"]]
                 volumes[f"{name}_data"] = None
             elif "redis" in tech:
@@ -70,7 +79,9 @@ async def generate_compose_from_canvas(canvas_id: uuid.UUID, db: AsyncSession) -
                 svc = dict(SERVICE_TEMPLATES["database"]["mongodb"])
             else:
                 svc = dict(SERVICE_TEMPLATES["database"]["postgres"])
-                svc["environment"] = {k: v.format(name=name) for k, v in svc["environment"].items()}
+                svc["environment"] = {
+                    k: v.format(name=name) for k, v in svc["environment"].items()
+                }
                 svc["volumes"] = [v.format(name=name) for v in svc["volumes"]]
                 volumes[f"{name}_data"] = None
         elif ctype == "queue":

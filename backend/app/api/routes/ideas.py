@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, text
+from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from app.core.database import get_db
 from app.core.security import get_current_user
@@ -8,8 +8,14 @@ from app.models.user import User
 from app.models.project import ProjectRole
 from app.models.idea import Idea, IdeaStatus, IdeaVote, IdeaComment
 from app.schemas.idea import (
-    IdeaCreate, IdeaUpdate, IdeaVoteRequest, IdeaCommentCreate,
-    IdeaResponse, IdeaDetailResponse, CommentResponse, IdeaSearchRequest,
+    IdeaCreate,
+    IdeaUpdate,
+    IdeaVoteRequest,
+    IdeaCommentCreate,
+    IdeaResponse,
+    IdeaDetailResponse,
+    CommentResponse,
+    IdeaSearchRequest,
 )
 from app.api.routes.projects import get_project_with_access
 from app.services.embedding import get_embedding
@@ -20,14 +26,19 @@ router = APIRouter(prefix="/projects/{project_id}/ideas", tags=["ideas"])
 
 def build_idea_response(idea: Idea) -> IdeaResponse:
     return IdeaResponse(
-        id=idea.id, project_id=idea.project_id, title=idea.title,
-        description=idea.description, status=idea.status, category=idea.category,
+        id=idea.id,
+        project_id=idea.project_id,
+        title=idea.title,
+        description=idea.description,
+        status=idea.status,
+        category=idea.category,
         feasibility_score=idea.feasibility_score,
         feasibility_reason=idea.feasibility_reason,
         vote_count=sum(v.value for v in idea.votes),
         comment_count=len(idea.comments),
         created_by=idea.created_by,
-        created_at=idea.created_at, updated_at=idea.updated_at,
+        created_at=idea.created_at,
+        updated_at=idea.updated_at,
     )
 
 
@@ -56,6 +67,23 @@ async def create_idea(
 
     db.add(idea)
     await db.flush()
+
+    # Auto-propagate to knowledge graph
+    from app.services.knowledge import auto_propagate_entity
+
+    try:
+        await auto_propagate_entity(
+            project_id=project_id,
+            name=req.title,
+            entity_type="idea",
+            properties={"description": req.description, "category": req.category},
+            db=db,
+            source_type="idea",
+            source_id=idea.id,
+        )
+    except Exception:
+        pass  # Knowledge propagation is best-effort
+
     idea.votes = []
     idea.comments = []
     return build_idea_response(idea)
@@ -81,7 +109,9 @@ async def list_ideas(
     if category:
         query = query.where(Idea.category == category)
     if q:
-        query = query.where(Idea.title.ilike(f"%{q}%") | Idea.description.ilike(f"%{q}%"))
+        query = query.where(
+            Idea.title.ilike(f"%{q}%") | Idea.description.ilike(f"%{q}%")
+        )
 
     result = await db.execute(query.order_by(Idea.created_at.desc()))
     ideas = result.scalars().unique().all()
@@ -169,7 +199,9 @@ async def vote_idea(
     if vote:
         vote.value = req.value
     else:
-        db.add(IdeaVote(id=uuid.uuid4(), idea_id=idea_id, user_id=user.id, value=req.value))
+        db.add(
+            IdeaVote(id=uuid.uuid4(), idea_id=idea_id, user_id=user.id, value=req.value)
+        )
     await db.flush()
 
 
@@ -183,7 +215,10 @@ async def add_comment(
 ):
     await get_project_with_access(project_id, user, db)
     comment = IdeaComment(
-        id=uuid.uuid4(), idea_id=idea_id, user_id=user.id, content=req.content,
+        id=uuid.uuid4(),
+        idea_id=idea_id,
+        user_id=user.id,
+        content=req.content,
     )
     db.add(comment)
     await db.flush()

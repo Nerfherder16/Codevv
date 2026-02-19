@@ -9,19 +9,22 @@ from app.models.user import User
 from app.models.project import ProjectRole
 from app.models.deploy import Environment, DeployJob, DeployStatus
 from app.schemas.deploy import (
-    EnvironmentCreate, EnvironmentUpdate, EnvironmentResponse,
-    DeployRequest, DeployJobResponse, GenerateComposeRequest,
+    EnvironmentCreate,
+    EnvironmentUpdate,
+    EnvironmentResponse,
+    DeployRequest,
+    DeployJobResponse,
+    GenerateComposeRequest,
 )
 from app.api.routes.projects import get_project_with_access
 from app.services.compose_gen import generate_compose_from_canvas
 import uuid
-import asyncio
-import json
 
 router = APIRouter(prefix="/projects/{project_id}/deploy", tags=["deploy"])
 
 
 # --- Environments ---
+
 
 @router.post("/environments", response_model=EnvironmentResponse, status_code=201)
 async def create_environment(
@@ -65,7 +68,9 @@ async def update_environment(
 ):
     await get_project_with_access(project_id, user, db, min_role=ProjectRole.editor)
     result = await db.execute(
-        select(Environment).where(Environment.id == env_id, Environment.project_id == project_id)
+        select(Environment).where(
+            Environment.id == env_id, Environment.project_id == project_id
+        )
     )
     env = result.scalar_one_or_none()
     if not env:
@@ -82,6 +87,7 @@ async def update_environment(
 
 # --- Compose Generation ---
 
+
 @router.post("/generate-compose", response_model=EnvironmentResponse)
 async def generate_compose(
     project_id: uuid.UUID,
@@ -90,12 +96,16 @@ async def generate_compose(
     db: AsyncSession = Depends(get_db),
 ):
     await get_project_with_access(project_id, user, db, min_role=ProjectRole.editor)
-    compose_yaml = await generate_compose_from_canvas(req.canvas_id, db)
+    try:
+        compose_yaml = await generate_compose_from_canvas(req.canvas_id, db)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
     # Find or create environment
     result = await db.execute(
         select(Environment).where(
-            Environment.project_id == project_id, Environment.name == req.environment_name
+            Environment.project_id == project_id,
+            Environment.name == req.environment_name,
         )
     )
     env = result.scalar_one_or_none()
@@ -112,6 +122,7 @@ async def generate_compose(
 
 
 # --- Deploy Jobs ---
+
 
 @router.post("/jobs", response_model=DeployJobResponse, status_code=201)
 async def start_deploy(

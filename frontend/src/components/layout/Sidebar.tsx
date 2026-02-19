@@ -17,6 +17,7 @@ import {
   Coins,
   ClipboardCheck,
   Shield,
+  FileText,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 
@@ -40,6 +41,7 @@ const NAV_GROUPS: NavGroup[] = [
       { to: "canvas", icon: Pencil, label: "Canvas" },
       { to: "ideas", icon: Lightbulb, label: "Idea Vault" },
       { to: "knowledge", icon: Share2, label: "Knowledge Graph" },
+      { to: "documents", icon: FileText, label: "Documents" },
     ],
   },
   {
@@ -91,7 +93,7 @@ export function Sidebar() {
       {/* Header */}
       <div className="flex items-center gap-2 p-4 border-b border-gray-200 dark:border-gray-800">
         <img
-          src="/codevvicon.png"
+          src="/codevvtrans.png"
           alt="Codevv"
           className="w-9 h-9 shrink-0 rounded"
         />
