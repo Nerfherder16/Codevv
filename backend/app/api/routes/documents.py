@@ -7,10 +7,24 @@ from app.models.project import ProjectRole
 from app.api.routes.projects import get_project_with_access
 from app.services.recall import _recall_post, browse_recall
 import uuid
+import io
 
 router = APIRouter(prefix="/projects/{project_id}/documents", tags=["documents"])
 
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
+DOCX_MIME_TYPES = {
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/octet-stream",
+}
+
+
+def _extract_docx_text(content_bytes: bytes) -> str:
+    """Extract plain text from a .docx file."""
+    from docx import Document
+
+    doc = Document(io.BytesIO(content_bytes))
+    paragraphs = [p.text for p in doc.paragraphs if p.text.strip()]
+    return "\n\n".join(paragraphs)
 
 
 @router.post("/upload", status_code=201)
@@ -29,12 +43,22 @@ async def upload_document(
     if len(content_bytes) > MAX_FILE_SIZE:
         raise HTTPException(status_code=413, detail="File too large (max 10 MB)")
 
-    try:
-        content = content_bytes.decode("utf-8")
-    except UnicodeDecodeError:
-        raise HTTPException(
-            status_code=400, detail="Only text-based files are supported"
-        )
+    filename = file.filename or ""
+    is_docx = filename.lower().endswith(".docx") or file.content_type in DOCX_MIME_TYPES
+
+    if is_docx:
+        try:
+            content = _extract_docx_text(content_bytes)
+        except Exception:
+            raise HTTPException(status_code=400, detail="Failed to parse DOCX file")
+    else:
+        try:
+            content = content_bytes.decode("utf-8")
+        except UnicodeDecodeError:
+            raise HTTPException(
+                status_code=400,
+                detail="Only text-based or DOCX files are supported",
+            )
 
     # Encode metadata as tags — Recall returns tags but not metadata
     tags = [
