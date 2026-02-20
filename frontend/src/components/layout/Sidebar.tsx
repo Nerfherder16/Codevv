@@ -94,7 +94,7 @@ export function Sidebar() {
       <div
         className={cn(
           "flex items-center justify-center shrink-0",
-          collapsed ? "p-2" : "px-3 py-1.5",
+          collapsed ? "p-2 pt-3" : "px-3 pt-3 pb-1.5",
         )}
       >
         {collapsed ? (
