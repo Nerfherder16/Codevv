@@ -413,44 +413,155 @@ mermaid.initialize({
 });
 
 function MermaidDiagram({ definition }: { definition: string }) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const svgRef = useRef<HTMLDivElement>(null);
   const renderCount = useRef(0);
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const dragState = useRef<{
+    dragging: boolean;
+    startX: number;
+    startY: number;
+    panX: number;
+    panY: number;
+  }>({
+    dragging: false,
+    startX: 0,
+    startY: 0,
+    panX: 0,
+    panY: 0,
+  });
 
   useEffect(() => {
-    const el = containerRef.current;
+    const el = svgRef.current;
     if (!el) return;
 
     renderCount.current += 1;
     const id = `mermaid-diagram-${renderCount.current}`;
-
-    // Remove any previous mermaid-generated elements
     el.innerHTML = "";
 
     mermaid
       .render(id, definition)
       .then(({ svg }) => {
-        if (containerRef.current) {
-          containerRef.current.innerHTML = svg;
+        if (svgRef.current) {
+          svgRef.current.innerHTML = svg;
+          // Remove max-width so zoom works properly
+          const svgEl = svgRef.current.querySelector("svg");
+          if (svgEl) {
+            svgEl.style.maxWidth = "none";
+            svgEl.removeAttribute("height");
+          }
         }
       })
       .catch(() => {
-        // Fallback: show raw text if render fails
-        if (containerRef.current) {
+        if (svgRef.current) {
           const pre = document.createElement("pre");
           pre.className =
             "text-xs font-mono text-gray-400 whitespace-pre-wrap p-2";
           pre.textContent = definition;
-          containerRef.current.innerHTML = "";
-          containerRef.current.appendChild(pre);
+          svgRef.current.innerHTML = "";
+          svgRef.current.appendChild(pre);
         }
       });
+
+    // Reset pan/zoom when definition changes
+    setZoom(1);
+    setPan({ x: 0, y: 0 });
   }, [definition]);
 
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    e.preventDefault();
+    setZoom((z) =>
+      Math.min(5, Math.max(0.2, z + (e.deltaY < 0 ? 0.15 : -0.15))),
+    );
+  }, []);
+
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      if (e.button !== 0) return;
+      dragState.current = {
+        dragging: true,
+        startX: e.clientX,
+        startY: e.clientY,
+        panX: pan.x,
+        panY: pan.y,
+      };
+    },
+    [pan],
+  );
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      const ds = dragState.current;
+      if (!ds.dragging) return;
+      setPan({
+        x: ds.panX + (e.clientX - ds.startX),
+        y: ds.panY + (e.clientY - ds.startY),
+      });
+    };
+    const handleMouseUp = () => {
+      dragState.current.dragging = false;
+    };
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, []);
+
   return (
-    <div
-      ref={containerRef}
-      className="flex-1 min-h-[400px] border border-gray-200 dark:border-gray-700 rounded-lg overflow-auto p-4 bg-gray-50 dark:bg-gray-800/30 [&_svg]:max-w-full [&_svg]:h-auto"
-    />
+    <div className="flex-1 flex flex-col min-h-[400px] border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-800/30">
+      {/* Zoom controls */}
+      <div className="flex items-center gap-2 px-3 py-1.5 border-b border-gray-200 dark:border-gray-700 shrink-0">
+        <button
+          onClick={() => setZoom((z) => Math.min(5, z + 0.25))}
+          className="px-2 py-0.5 text-xs font-medium rounded bg-white/10 hover:bg-white/20 text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600"
+        >
+          +
+        </button>
+        <button
+          onClick={() => setZoom((z) => Math.max(0.2, z - 0.25))}
+          className="px-2 py-0.5 text-xs font-medium rounded bg-white/10 hover:bg-white/20 text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600"
+        >
+          -
+        </button>
+        <button
+          onClick={() => {
+            setZoom(1);
+            setPan({ x: 0, y: 0 });
+          }}
+          className="px-2 py-0.5 text-xs font-medium rounded bg-white/10 hover:bg-white/20 text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600"
+        >
+          Reset
+        </button>
+        <span className="text-[10px] text-gray-400 ml-1">
+          {Math.round(zoom * 100)}%
+        </span>
+        <span className="text-[10px] text-gray-500 ml-auto">
+          Scroll to zoom · Drag to pan
+        </span>
+      </div>
+      {/* Pannable/zoomable viewport */}
+      <div
+        ref={viewportRef}
+        className="flex-1 overflow-hidden cursor-grab active:cursor-grabbing"
+        onWheel={handleWheel}
+        onMouseDown={handleMouseDown}
+      >
+        <div
+          ref={svgRef}
+          style={{
+            transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+            transformOrigin: "top left",
+            transition: dragState.current.dragging
+              ? "none"
+              : "transform 0.1s ease-out",
+          }}
+          className="p-4 inline-block"
+        />
+      </div>
+    </div>
   );
 }
 
