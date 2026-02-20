@@ -180,16 +180,18 @@ export function Sidebar() {
         </div>
       </nav>
 
-      {/* Collapse toggle — right edge */}
+      {/* Collapse toggle — inward notch on right edge */}
       <button
         onClick={toggleCollapse}
-        className="absolute top-1/2 -translate-y-1/2 -right-3 w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors z-10 shadow-sm"
+        className="absolute top-1/2 -translate-y-1/2 -right-[1px] z-10 flex items-center group"
       >
-        {collapsed ? (
-          <ChevronRight className="w-3.5 h-3.5" />
-        ) : (
-          <ChevronLeft className="w-3.5 h-3.5" />
-        )}
+        <div className="w-4 h-10 bg-gray-200 dark:bg-gray-800 rounded-r-lg border border-l-0 border-gray-300 dark:border-gray-700 flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors">
+          {collapsed ? (
+            <ChevronRight className="w-3 h-3 text-gray-500 dark:text-gray-400" />
+          ) : (
+            <ChevronLeft className="w-3 h-3 text-gray-500 dark:text-gray-400" />
+          )}
+        </div>
       </button>
     </aside>
   );
