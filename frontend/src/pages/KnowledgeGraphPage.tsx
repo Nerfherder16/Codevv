@@ -419,27 +419,34 @@ function ForceGraph({
     };
   }, []);
 
-  // --- Zoom (smooth, works with both scroll wheel and trackpad pinch) ---
-  const handleWheel = useCallback(
-    (e: React.WheelEvent) => {
+  // --- Zoom (native listener with passive:false so preventDefault works) ---
+  const zoomRef = useRef({ zoom, pan });
+  zoomRef.current = { zoom, pan };
+
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+
+    const onWheel = (e: WheelEvent) => {
       e.preventDefault();
-      const svg = svgRef.current;
-      if (!svg) return;
+      e.stopPropagation();
       const rect = svg.getBoundingClientRect();
       const mouseX = e.clientX - rect.left;
       const mouseY = e.clientY - rect.top;
-      // Smooth proportional zoom — small delta = small change (trackpad friendly)
+      const { zoom: z, pan: p } = zoomRef.current;
       const delta = -e.deltaY * 0.002;
       const factor = Math.max(0.9, Math.min(1.1, 1 + delta));
-      const newZoom = Math.min(4, Math.max(0.3, zoom * factor));
+      const newZoom = Math.min(4, Math.max(0.3, z * factor));
       setPan({
-        x: mouseX - ((mouseX - pan.x) / zoom) * newZoom,
-        y: mouseY - ((mouseY - pan.y) / zoom) * newZoom,
+        x: mouseX - ((mouseX - p.x) / z) * newZoom,
+        y: mouseY - ((mouseY - p.y) / z) * newZoom,
       });
       setZoom(newZoom);
-    },
-    [zoom, pan],
-  );
+    };
+
+    svg.addEventListener("wheel", onWheel, { passive: false });
+    return () => svg.removeEventListener("wheel", onWheel);
+  }, []);
 
   if (nodesRef.current.length === 0) {
     return (
@@ -487,7 +494,6 @@ function ForceGraph({
       <svg
         ref={svgRef}
         className="absolute inset-0 w-full h-full bg-gray-50 dark:bg-gray-800/30 rounded-lg cursor-grab active:cursor-grabbing"
-        onWheel={handleWheel}
         onMouseDown={handleSvgMouseDown}
       >
         <g transform={`translate(${pan.x},${pan.y}) scale(${zoom})`}>
@@ -671,12 +677,21 @@ function MermaidDiagram({ definition }: { definition: string }) {
     setPan({ x: 0, y: 0 });
   }, [definition]);
 
-  const handleWheel = useCallback((e: React.WheelEvent) => {
-    e.preventDefault();
-    // Smooth proportional zoom — trackpad pinch friendly
-    const delta = -e.deltaY * 0.002;
-    const factor = Math.max(0.9, Math.min(1.1, 1 + delta));
-    setZoom((z) => Math.min(4, Math.max(0.3, z * factor)));
+  // Native wheel listener with passive:false so preventDefault stops page zoom
+  useEffect(() => {
+    const el = viewportRef.current;
+    if (!el) return;
+
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const delta = -e.deltaY * 0.002;
+      const factor = Math.max(0.9, Math.min(1.1, 1 + delta));
+      setZoom((z) => Math.min(4, Math.max(0.3, z * factor)));
+    };
+
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
   }, []);
 
   const handleMouseDown = useCallback(
@@ -749,7 +764,6 @@ function MermaidDiagram({ definition }: { definition: string }) {
       <div
         ref={viewportRef}
         className="flex-1 overflow-hidden cursor-grab active:cursor-grabbing"
-        onWheel={handleWheel}
         onMouseDown={handleMouseDown}
       >
         <div
