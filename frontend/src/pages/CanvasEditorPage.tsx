@@ -418,45 +418,47 @@ export function CanvasEditorPage() {
 
       {/* Main content area */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Tldraw canvas */}
-        <div className="flex-1">
-          <Tldraw
-            hideUi={hideTools}
-            onMount={(editor) => {
-              editorRef.current = editor;
-              if (canvas?.components.length) {
-                // Fire-and-forget: fetch deps then populate
-                // (onMount must NOT return a Promise — tldraw expects void or cleanup fn)
-                void (async () => {
-                  try {
-                    const depGraph = await api.get<{
-                      nodes: Array<{
-                        id: string;
-                        name: string;
-                        component_type: string;
-                      }>;
-                      edges: DependencyEdge[];
-                    }>(`/projects/${projectId}/dependencies`);
-                    const canvasCompIds = new Set(
-                      canvas.components.map((c) => c.id),
-                    );
-                    const relevantEdges = depGraph.edges.filter(
-                      (e) =>
-                        canvasCompIds.has(e.source_id) &&
-                        canvasCompIds.has(e.target_id),
-                    );
-                    populateTldrawShapes(
-                      editor,
-                      canvas.components,
-                      relevantEdges,
-                    );
-                  } catch {
-                    populateTldrawShapes(editor, canvas.components);
-                  }
-                })();
-              }
-            }}
-          />
+        {/* Tldraw canvas — relative+absolute gives explicit dimensions on iOS Safari */}
+        <div className="flex-1 relative">
+          <div className="absolute inset-0">
+            <Tldraw
+              hideUi={hideTools}
+              onMount={(editor) => {
+                editorRef.current = editor;
+                if (canvas?.components.length) {
+                  // Fire-and-forget: fetch deps then populate
+                  // (onMount must NOT return a Promise — tldraw expects void or cleanup fn)
+                  void (async () => {
+                    try {
+                      const depGraph = await api.get<{
+                        nodes: Array<{
+                          id: string;
+                          name: string;
+                          component_type: string;
+                        }>;
+                        edges: DependencyEdge[];
+                      }>(`/projects/${projectId}/dependencies`);
+                      const canvasCompIds = new Set(
+                        canvas.components.map((c) => c.id),
+                      );
+                      const relevantEdges = depGraph.edges.filter(
+                        (e) =>
+                          canvasCompIds.has(e.source_id) &&
+                          canvasCompIds.has(e.target_id),
+                      );
+                      populateTldrawShapes(
+                        editor,
+                        canvas.components,
+                        relevantEdges,
+                      );
+                    } catch {
+                      populateTldrawShapes(editor, canvas.components);
+                    }
+                  })();
+                }
+              }}
+            />
+          </div>
         </div>
 
         {/* Side panel */}

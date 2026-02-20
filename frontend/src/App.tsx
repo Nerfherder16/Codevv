@@ -27,11 +27,15 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/projects" replace />} />
         <Route path="/projects" element={<ProjectListPage />} />
+        {/* Canvas editor is outside AppShell — tldraw needs full-screen without overflow:auto ancestor (iOS Safari fix) */}
+        <Route
+          path="/projects/:projectId/canvas/:canvasId"
+          element={<CanvasEditorPage />}
+        />
         <Route path="/projects/:projectId" element={<AppShell />}>
           <Route index element={<ProjectOverviewPage />} />
           <Route path="rules" element={<RulesPage />} />
           <Route path="canvas" element={<CanvasPage />} />
-          <Route path="canvas/:canvasId" element={<CanvasEditorPage />} />
           <Route path="ideas" element={<IdeasPage />} />
           <Route path="ideas/:ideaId" element={<IdeaDetailPage />} />
           <Route path="scaffold" element={<ScaffoldPage />} />
