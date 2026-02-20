@@ -4,7 +4,7 @@ import {
   LayoutDashboard,
   Pencil,
   Lightbulb,
-  Code2,
+  Video,
   Ellipsis,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
@@ -13,7 +13,7 @@ const NAV_ITEMS = [
   { to: "", icon: LayoutDashboard, label: "Overview", end: true },
   { to: "canvas", icon: Pencil, label: "Canvas" },
   { to: "ideas", icon: Lightbulb, label: "Ideas" },
-  { to: "scaffold", icon: Code2, label: "Scaffold" },
+  { to: "rooms", icon: Video, label: "Rooms" },
 ];
 
 export function MobileBottomNav() {
@@ -36,13 +36,13 @@ export function MobileBottomNav() {
         <div className="fixed bottom-16 left-0 right-0 z-50 sm:hidden px-3 pb-1">
           <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-xl p-2 grid grid-cols-4 gap-1">
             {[
+              { to: "scaffold", label: "Scaffold" },
               { to: "knowledge", label: "Knowledge" },
               { to: "documents", label: "Docs" },
               { to: "pipeline", label: "Pipeline" },
               { to: "dependencies", label: "Deps" },
               { to: "deploy", label: "Deploy" },
               { to: "rules", label: "Rules" },
-              { to: "rooms", label: "Rooms" },
               { to: "settings", label: "Settings" },
             ].map((item) => (
               <NavLink
