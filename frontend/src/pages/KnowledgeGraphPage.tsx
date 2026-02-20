@@ -435,8 +435,8 @@ function ForceGraph({
       const mouseX = e.clientX - rect.left;
       const mouseY = e.clientY - rect.top;
       const { zoom: z, pan: p } = zoomRef.current;
-      const delta = -e.deltaY * 0.004;
-      const factor = Math.max(0.85, Math.min(1.15, 1 + delta));
+      const delta = -e.deltaY * 0.008;
+      const factor = Math.max(0.8, Math.min(1.2, 1 + delta));
       const newZoom = Math.min(4, Math.max(0.3, z * factor));
       setPan({
         x: mouseX - ((mouseX - p.x) / z) * newZoom,
@@ -516,19 +516,19 @@ function ForceGraph({
                   strokeOpacity={0.4}
                 />
                 <rect
-                  x={mx - 30}
-                  y={my - 14}
-                  width={60}
-                  height={14}
+                  x={mx - 36}
+                  y={my - 16}
+                  width={72}
+                  height={16}
                   rx={3}
                   fill="#1e1b2e"
-                  fillOpacity={0.7}
+                  fillOpacity={0.75}
                 />
                 <text
                   x={mx}
                   y={my - 4}
                   textAnchor="middle"
-                  fontSize={9}
+                  fontSize={11}
                   fill="#94a3b8"
                 >
                   {e.relation_type}
@@ -540,7 +540,7 @@ function ForceGraph({
           {nodesRef.current.map((n) => {
             const isPinned = pinnedRef.current.has(n.id);
             const r = nodeRadius(n.id);
-            const labelLen = n.name.length * 4.5 + 8;
+            const labelLen = n.name.length * 5.5 + 10;
             return (
               <g
                 key={n.id}
@@ -562,16 +562,16 @@ function ForceGraph({
                   x={n.x - labelLen / 2}
                   y={n.y + r + 4}
                   width={labelLen}
-                  height={16}
+                  height={18}
                   rx={4}
                   fill="#0f0d1a"
                   fillOpacity={0.75}
                 />
                 <text
                   x={n.x}
-                  y={n.y + r + 15}
+                  y={n.y + r + 17}
                   textAnchor="middle"
-                  fontSize={12}
+                  fontSize={14}
                   fontWeight={500}
                   fill="#e5e7eb"
                 >
@@ -685,8 +685,8 @@ function MermaidDiagram({ definition }: { definition: string }) {
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      const delta = -e.deltaY * 0.004;
-      const factor = Math.max(0.85, Math.min(1.15, 1 + delta));
+      const delta = -e.deltaY * 0.008;
+      const factor = Math.max(0.8, Math.min(1.2, 1 + delta));
       setZoom((z) => Math.min(4, Math.max(0.3, z * factor)));
     };
 
