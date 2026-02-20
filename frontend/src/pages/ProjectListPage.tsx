@@ -106,7 +106,7 @@ export function ProjectListPage() {
           <img
             src="/codevvrevlogo.png"
             alt="Codevv"
-            className="h-20 w-auto mt-4"
+            className="h-16 w-auto mt-4"
           />
 
           {/* Right controls */}
