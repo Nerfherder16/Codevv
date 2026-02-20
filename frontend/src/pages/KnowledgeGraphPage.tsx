@@ -516,19 +516,19 @@ function ForceGraph({
                   strokeOpacity={0.4}
                 />
                 <rect
-                  x={mx - 36}
-                  y={my - 16}
-                  width={72}
-                  height={16}
+                  x={mx - 42}
+                  y={my - 18}
+                  width={84}
+                  height={18}
                   rx={3}
                   fill="#1e1b2e"
                   fillOpacity={0.75}
                 />
                 <text
                   x={mx}
-                  y={my - 4}
+                  y={my - 5}
                   textAnchor="middle"
-                  fontSize={11}
+                  fontSize={13}
                   fill="#94a3b8"
                 >
                   {e.relation_type}
@@ -540,7 +540,7 @@ function ForceGraph({
           {nodesRef.current.map((n) => {
             const isPinned = pinnedRef.current.has(n.id);
             const r = nodeRadius(n.id);
-            const labelLen = n.name.length * 5.5 + 10;
+            const labelLen = n.name.length * 6.5 + 12;
             return (
               <g
                 key={n.id}
@@ -562,16 +562,16 @@ function ForceGraph({
                   x={n.x - labelLen / 2}
                   y={n.y + r + 4}
                   width={labelLen}
-                  height={18}
+                  height={20}
                   rx={4}
                   fill="#0f0d1a"
                   fillOpacity={0.75}
                 />
                 <text
                   x={n.x}
-                  y={n.y + r + 17}
+                  y={n.y + r + 18}
                   textAnchor="middle"
-                  fontSize={14}
+                  fontSize={16}
                   fontWeight={500}
                   fill="#e5e7eb"
                 >
@@ -598,6 +598,7 @@ mermaid.initialize({
     lineColor: "#94a3b8",
     secondaryColor: "#252236",
     tertiaryColor: "#2d2a3e",
+    fontSize: "16px",
   },
 });
 
