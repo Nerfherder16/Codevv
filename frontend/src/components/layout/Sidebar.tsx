@@ -91,14 +91,19 @@ export function Sidebar() {
       )}
     >
       {/* Header */}
-      <div className="flex items-center gap-2 p-4 border-b border-gray-200 dark:border-gray-800">
-        <img
-          src="/codevvtrans.png"
-          alt="Codevv"
-          className="w-9 h-9 shrink-0 rounded"
-        />
-        {!collapsed && (
-          <span className="font-bold text-lg truncate">Codevv</span>
+      <div className="flex items-center justify-center border-b border-gray-200 dark:border-gray-800 p-3">
+        {collapsed ? (
+          <img
+            src="/codevvtrans.png"
+            alt="Codevv"
+            className="w-9 h-9 shrink-0 rounded"
+          />
+        ) : (
+          <img
+            src="/codevvtransparentlogo.webp"
+            alt="Codevv"
+            className="h-10 w-auto shrink-0"
+          />
         )}
       </div>
 
