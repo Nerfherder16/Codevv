@@ -86,7 +86,7 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        "h-screen sticky top-0 bg-gray-100 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col transition-all duration-200",
+        "h-screen sticky top-0 relative bg-gray-100 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col transition-all duration-200",
         collapsed ? "w-16" : "w-60",
       )}
     >
@@ -180,15 +180,15 @@ export function Sidebar() {
         </div>
       </nav>
 
-      {/* Collapse toggle */}
+      {/* Collapse toggle — right edge */}
       <button
         onClick={toggleCollapse}
-        className="p-3 border-t border-gray-200 dark:border-gray-800 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors"
+        className="absolute top-1/2 -translate-y-1/2 -right-3 w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors z-10 shadow-sm"
       >
         {collapsed ? (
-          <ChevronRight className="w-5 h-5 mx-auto" />
+          <ChevronRight className="w-3.5 h-3.5" />
         ) : (
-          <ChevronLeft className="w-5 h-5 mx-auto" />
+          <ChevronLeft className="w-3.5 h-3.5" />
         )}
       </button>
     </aside>
