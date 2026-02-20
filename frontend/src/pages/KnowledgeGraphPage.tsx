@@ -422,20 +422,21 @@ function ForceGraph({
   // --- Zoom (native listener with passive:false so preventDefault works) ---
   const zoomRef = useRef({ zoom, pan });
   zoomRef.current = { zoom, pan };
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const svg = svgRef.current;
-    if (!svg) return;
+    const el = wrapperRef.current;
+    if (!el) return;
 
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      const rect = svg.getBoundingClientRect();
+      const rect = el.getBoundingClientRect();
       const mouseX = e.clientX - rect.left;
       const mouseY = e.clientY - rect.top;
       const { zoom: z, pan: p } = zoomRef.current;
-      const delta = -e.deltaY * 0.002;
-      const factor = Math.max(0.9, Math.min(1.1, 1 + delta));
+      const delta = -e.deltaY * 0.004;
+      const factor = Math.max(0.85, Math.min(1.15, 1 + delta));
       const newZoom = Math.min(4, Math.max(0.3, z * factor));
       setPan({
         x: mouseX - ((mouseX - p.x) / z) * newZoom,
@@ -444,23 +445,22 @@ function ForceGraph({
       setZoom(newZoom);
     };
 
-    svg.addEventListener("wheel", onWheel, { passive: false });
-    return () => svg.removeEventListener("wheel", onWheel);
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
   }, []);
 
-  if (nodesRef.current.length === 0) {
-    return (
-      <div className="absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-500 text-sm">
-        <div className="text-center">
-          <Network className="w-10 h-10 mx-auto mb-2 opacity-50" />
-          <p>Select a start node and traverse to see the graph</p>
-        </div>
-      </div>
-    );
-  }
+  const isEmpty = nodesRef.current.length === 0;
 
   return (
-    <>
+    <div ref={wrapperRef} className="absolute inset-0">
+      {isEmpty && (
+        <div className="absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-500 text-sm z-10">
+          <div className="text-center">
+            <Network className="w-10 h-10 mx-auto mb-2 opacity-50" />
+            <p>Select a start node and traverse to see the graph</p>
+          </div>
+        </div>
+      )}
       {/* Zoom toolbar */}
       <div className="absolute top-2 left-2 z-10 flex items-center gap-1.5 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-md px-2 py-1 border border-gray-200 dark:border-gray-700 shadow-sm">
         <button
@@ -582,7 +582,7 @@ function ForceGraph({
           })}
         </g>
       </svg>
-    </>
+    </div>
   );
 }
 
@@ -685,8 +685,8 @@ function MermaidDiagram({ definition }: { definition: string }) {
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      const delta = -e.deltaY * 0.002;
-      const factor = Math.max(0.9, Math.min(1.1, 1 + delta));
+      const delta = -e.deltaY * 0.004;
+      const factor = Math.max(0.85, Math.min(1.15, 1 + delta));
       setZoom((z) => Math.min(4, Math.max(0.3, z * factor)));
     };
 
