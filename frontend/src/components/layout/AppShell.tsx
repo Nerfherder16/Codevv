@@ -3,6 +3,7 @@ import { Outlet } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
 import { MobileBottomNav } from "./MobileBottomNav";
+import { AIChatPanel } from "../ai/AIChatPanel";
 
 export function AppShell() {
   return (
@@ -17,6 +18,7 @@ export function AppShell() {
         </main>
       </div>
       <MobileBottomNav />
+      <AIChatPanel />
     </div>
   );
 }

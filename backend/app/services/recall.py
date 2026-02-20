@@ -65,3 +65,31 @@ async def pin_memory(memory_id: str) -> dict:
 
 async def unpin_memory(memory_id: str) -> dict:
     return await _recall_delete(f"/memory/{memory_id}/pin")
+
+
+async def get_recall_context(query: str, max_tokens: int = 2000) -> str | None:
+    """Get assembled context from Recall for system prompt enrichment."""
+    try:
+        data = await _recall_post(
+            "/search/context", json={"query": query, "max_tokens": max_tokens}
+        )
+        return data.get("context") or data.get("text") or None
+    except Exception:
+        return None
+
+
+async def store_knowledge(
+    project_slug: str,
+    name: str,
+    entity_type: str,
+    description: str,
+    metadata: dict | None = None,
+) -> dict:
+    """Store a knowledge item in Recall."""
+    payload = {
+        "content": description,
+        "domain": f"codevv:{project_slug}",
+        "tags": [f"type:{entity_type}"],
+        "metadata": {"name": name, "entity_type": entity_type, **(metadata or {})},
+    }
+    return await _recall_post("/memory/store", json=payload)

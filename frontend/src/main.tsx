@@ -5,6 +5,7 @@ import { AnimatePresence } from "framer-motion";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { ToastProvider } from "./contexts/ToastContext";
+import { AIChatProvider } from "./contexts/AIChatContext";
 import App from "./App";
 import "./index.css";
 
@@ -14,9 +15,11 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       <ThemeProvider>
         <ToastProvider>
           <AuthProvider>
-            <AnimatePresence mode="wait">
-              <App />
-            </AnimatePresence>
+            <AIChatProvider>
+              <AnimatePresence mode="wait">
+                <App />
+              </AnimatePresence>
+            </AIChatProvider>
           </AuthProvider>
         </ToastProvider>
       </ThemeProvider>

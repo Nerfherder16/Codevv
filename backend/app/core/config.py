@@ -37,6 +37,12 @@ class Settings(BaseSettings):
     # Solana
     solana_rpc_url: str = "https://api.devnet.solana.com"
 
+    # Claude AI
+    anthropic_api_key: str = ""
+    claude_model: str = "claude-opus-4-6"
+    claude_max_turns: int = 25
+    claude_oauth_callback_url: str = ""
+
     # App
     environment: str = "development"
     app_name: str = "Codevv"

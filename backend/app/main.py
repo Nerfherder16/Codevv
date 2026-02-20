@@ -4,9 +4,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import get_settings
 from app.core.database import init_db
 from app.api.routes import (
+    ai,
     auth,
     projects,
     canvases,
+    conversations,
     ideas,
     scaffold,
     knowledge,
@@ -57,9 +59,11 @@ app.add_middleware(
 )
 
 # API routes
+app.include_router(ai.router, prefix="/api")
 app.include_router(auth.router, prefix="/api")
 app.include_router(projects.router, prefix="/api")
 app.include_router(canvases.router, prefix="/api")
+app.include_router(conversations.router, prefix="/api")
 app.include_router(ideas.router, prefix="/api")
 app.include_router(scaffold.router, prefix="/api")
 app.include_router(knowledge.router, prefix="/api")

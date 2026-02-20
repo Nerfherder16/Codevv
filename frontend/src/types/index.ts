@@ -391,3 +391,63 @@ export interface LaunchReadiness {
   passed: number;
   failed: number;
 }
+
+// AI Chat
+export interface Conversation {
+  id: string;
+  project_id: string;
+  user_id: string;
+  title: string;
+  model: string;
+  message_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ConversationMessage {
+  id: string;
+  conversation_id: string;
+  role: string;
+  content: string;
+  tool_uses_json: string | null;
+  created_at: string;
+}
+
+export interface ConversationDetail extends Conversation {
+  messages: ConversationMessage[];
+}
+
+export interface ChatContext {
+  page?: string;
+  canvas_id?: string;
+  component_id?: string;
+  idea_id?: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  toolUses?: ToolUseEvent[];
+  timestamp: number;
+  streaming?: boolean;
+}
+
+export interface ToolUseEvent {
+  name: string;
+  input?: Record<string, unknown>;
+  output?: string;
+  status?: string;
+}
+
+export interface DoneEvent {
+  session_id?: string | null;
+  model: string;
+  conversation_id?: string;
+}
+
+export interface AIModel {
+  id: string;
+  name: string;
+  description: string;
+}

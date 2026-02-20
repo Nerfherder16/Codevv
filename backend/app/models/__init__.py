@@ -10,6 +10,8 @@ from app.models.pipeline import AgentRun, AgentFinding
 from app.models.solana import SolanaWatchlist
 from app.models.audit import AuditReport
 from app.models.compliance import ComplianceChecklist, ComplianceCheck
+from app.models.conversation import Conversation, ConversationMessage
+from app.models.claude_credential import ClaudeCredential
 
 __all__ = [
     "User",
@@ -32,4 +34,7 @@ __all__ = [
     "AuditReport",
     "ComplianceChecklist",
     "ComplianceCheck",
+    "Conversation",
+    "ConversationMessage",
+    "ClaudeCredential",
 ]

@@ -67,6 +67,8 @@ services:
       RECALL_URL: "http://192.168.50.19:8200"
       GITHUB_TOKEN: "${GITHUB_TOKEN:-}"
       SOLANA_RPC_URL: "https://api.devnet.solana.com"
+      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
+      CLAUDE_OAUTH_CALLBACK_URL: "http://192.168.50.19:8002/api/auth/claude-callback"
     volumes:
       - ./backend/app:/app/app
     depends_on:
@@ -86,6 +88,8 @@ services:
       RECALL_URL: "http://192.168.50.19:8200"
       GITHUB_TOKEN: "${GITHUB_TOKEN:-}"
       SOLANA_RPC_URL: "https://api.devnet.solana.com"
+      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
+      CLAUDE_OAUTH_CALLBACK_URL: "http://192.168.50.19:8002/api/auth/claude-callback"
     depends_on:
       postgres:
         condition: service_healthy

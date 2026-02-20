@@ -1,11 +1,13 @@
 import React from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
-import { Sun, Moon, LogOut, User } from "lucide-react";
+import { Sun, Moon, LogOut, User, Bot } from "lucide-react";
+import { useAIChat } from "../../contexts/AIChatContext";
 
 export function TopBar() {
   const { user, logout } = useAuth();
   const { theme, toggle } = useTheme();
+  const { toggle: toggleAI } = useAIChat();
 
   return (
     <header className="h-14 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-3 sm:px-6 bg-white dark:bg-gray-900/50">
@@ -14,6 +16,13 @@ export function TopBar() {
       </div>
       <div className="hidden sm:block" />
       <div className="flex items-center gap-3">
+        <button
+          onClick={toggleAI}
+          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          title="AI Assistant"
+        >
+          <Bot className="w-4 h-4 text-teal" />
+        </button>
         <button
           onClick={toggle}
           className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
