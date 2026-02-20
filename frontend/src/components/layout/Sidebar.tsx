@@ -109,23 +109,41 @@ export function Sidebar() {
           style={{ right: "-14px" }}
         >
           {collapsed ? (
-            <path
-              d="M 14 13 L 26 22 L 14 31"
-              fill="none"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="stroke-gray-200 dark:stroke-gray-800 group-hover:stroke-white transition-colors"
-            />
+            <>
+              {/* Fill: sidebar grey */}
+              <path
+                d="M 14 13 L 26 22 L 14 31 Z"
+                className="fill-gray-100 dark:fill-gray-900"
+                stroke="none"
+              />
+              {/* Chevron strokes */}
+              <path
+                d="M 14 13 L 26 22 L 14 31"
+                fill="none"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="stroke-gray-200 dark:stroke-gray-800 group-hover:stroke-white transition-colors"
+              />
+            </>
           ) : (
-            <path
-              d="M 14 13 L 2 22 L 14 31"
-              fill="none"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="stroke-gray-200 dark:stroke-gray-800 group-hover:stroke-white transition-colors"
-            />
+            <>
+              {/* Fill: page black */}
+              <path
+                d="M 14 13 L 2 22 L 14 31 Z"
+                className="fill-white dark:fill-gray-950"
+                stroke="none"
+              />
+              {/* Chevron strokes */}
+              <path
+                d="M 14 13 L 2 22 L 14 31"
+                fill="none"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="stroke-gray-200 dark:stroke-gray-800 group-hover:stroke-white transition-colors"
+              />
+            </>
           )}
         </svg>
       </button>
