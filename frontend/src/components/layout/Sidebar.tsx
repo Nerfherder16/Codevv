@@ -84,10 +84,20 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        "h-screen sticky top-0 relative bg-gray-100 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col transition-all duration-200",
+        "h-screen sticky top-0 relative bg-gray-100 dark:bg-gray-900 flex flex-col transition-all duration-200",
         collapsed ? "w-16" : "w-60",
       )}
     >
+      {/* Right border — split into two segments with gap for notch */}
+      <div
+        className="absolute right-0 top-0 w-px bg-gray-200 dark:bg-gray-800"
+        style={{ height: "calc(50% - 7px)" }}
+      />
+      <div
+        className="absolute right-0 bottom-0 w-px bg-gray-200 dark:bg-gray-800"
+        style={{ height: "calc(50% - 7px)" }}
+      />
+
       {/* Header */}
       <div
         className={cn(
@@ -192,7 +202,7 @@ export function Sidebar() {
               strokeWidth="1.5"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="stroke-white group-hover:stroke-gray-300 transition-colors"
+              className="stroke-gray-200 dark:stroke-gray-800 group-hover:stroke-white transition-colors"
             />
           ) : (
             <path
@@ -201,7 +211,7 @@ export function Sidebar() {
               strokeWidth="1.5"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="stroke-white group-hover:stroke-gray-300 transition-colors"
+              className="stroke-gray-200 dark:stroke-gray-800 group-hover:stroke-white transition-colors"
             />
           )}
         </svg>
