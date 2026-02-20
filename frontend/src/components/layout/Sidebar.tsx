@@ -107,7 +107,7 @@ export function Sidebar() {
           <img
             src="/codevvtransparentlogo.webp"
             alt="Codevv"
-            className="h-8 w-auto shrink-0 object-contain"
+            className="h-14 w-auto shrink-0 object-contain"
           />
         )}
       </div>
