@@ -100,7 +100,7 @@ export function LoginPage() {
             <img
               src="/codevvrevlogo.png"
               alt=""
-              className="h-10 w-auto opacity-80"
+              className="h-16 w-auto opacity-80"
             />
           </motion.div>
 
