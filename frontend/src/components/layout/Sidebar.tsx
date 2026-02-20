@@ -101,13 +101,13 @@ export function Sidebar() {
           <img
             src="/codevvtrans.png"
             alt="Codevv"
-            className="w-full shrink-0 rounded object-contain"
+            className="h-8 w-auto shrink-0 rounded object-contain"
           />
         ) : (
           <img
             src="/codevvtransparentlogo.webp"
             alt="Codevv"
-            className="w-full shrink-0 object-contain"
+            className="h-8 w-auto shrink-0 object-contain"
           />
         )}
       </div>
