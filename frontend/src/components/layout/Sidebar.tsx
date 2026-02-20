@@ -110,21 +110,19 @@ export function Sidebar() {
         >
           {collapsed ? (
             <path
-              d="M 14 15 L 24 22 L 14 29"
-              fill="none"
+              d="M 14 15 L 24 22 L 14 29 Z"
               strokeWidth="1.5"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="stroke-gray-200 dark:stroke-gray-800 group-hover:stroke-white transition-colors"
+              className="fill-gray-100 dark:fill-gray-900 stroke-gray-200 dark:stroke-gray-800 group-hover:stroke-white transition-colors"
             />
           ) : (
             <path
-              d="M 14 15 L 4 22 L 14 29"
-              fill="none"
+              d="M 14 15 L 4 22 L 14 29 Z"
               strokeWidth="1.5"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="stroke-gray-200 dark:stroke-gray-800 group-hover:stroke-white transition-colors"
+              className="fill-gray-50 dark:fill-gray-950 stroke-gray-200 dark:stroke-gray-800 group-hover:stroke-white transition-colors"
             />
           )}
         </svg>
