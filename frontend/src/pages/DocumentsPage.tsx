@@ -56,7 +56,7 @@ export function DocumentsPage() {
       const res = await fetch(`/api/projects/${projectId}/documents/upload`, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${localStorage.getItem("bh-token")}`,
         },
         body: form,
       });
@@ -85,20 +85,20 @@ export function DocumentsPage() {
         title="Documents"
         description="Upload documents to your project's knowledge base."
         action={
-          <label>
-            <Button as="span" disabled={uploading}>
+          <label className="cursor-pointer">
+            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-teal text-white text-sm font-medium hover:brightness-110 transition-all">
               {uploading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <Upload className="w-4 h-4" />
               )}
               {uploading ? "Uploading..." : "Upload Document"}
-            </Button>
+            </span>
             <input
               type="file"
               className="hidden"
               onChange={handleUpload}
-              accept=".txt,.md,.json,.yaml,.yml,.csv,.py,.ts,.tsx,.js,.jsx,.html,.css,.toml,.cfg,.ini,.xml,.sql,.sh,.bat,.ps1,.log"
+              accept=".txt,.md,.json,.yaml,.yml,.csv,.py,.ts,.tsx,.js,.jsx,.html,.css,.toml,.cfg,.ini,.xml,.sql,.sh,.bat,.ps1,.log,.docx,.doc,.pdf"
               disabled={uploading}
             />
           </label>

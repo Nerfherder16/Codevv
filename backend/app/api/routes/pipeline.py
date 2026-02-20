@@ -129,4 +129,4 @@ async def cancel_run(
             status_code=400, detail="Can only cancel queued or running runs"
         )
     run.status = RunStatus.cancelled
-    await db.flush()
+    await db.commit()

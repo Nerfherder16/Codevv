@@ -5,8 +5,8 @@ import React, {
   useRef,
   useMemo,
 } from "react";
-import { useParams } from "react-router-dom";
-import { GitBranch, AlertTriangle, Network, X } from "lucide-react";
+import { useParams, useNavigate } from "react-router-dom";
+import { GitBranch, AlertTriangle, Network, X, ArrowLeft } from "lucide-react";
 import { api } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { Button } from "../components/common/Button";
@@ -56,6 +56,23 @@ const TYPE_COLORS: Record<string, string> = {
   database: "#10b981",
   queue: "#f59e0b",
   api: "#8b5cf6",
+  cache: "#a855f7",
+  frontend: "#f472b6",
+  gateway: "#fb923c",
+  smart_contract: "#8b5cf6",
+  infrastructure: "#6b7280",
+  integration: "#f97316",
+  agent: "#ef4444",
+  worker: "#eab308",
+  middleware: "#38bdf8",
+  mobile_app: "#ec4899",
+  web_app: "#f472b6",
+  actor: "#3b82f6",
+  constraint: "#ef4444",
+  compute: "#0ea5e9",
+  security: "#dc2626",
+  monitoring: "#eab308",
+  pipeline: "#f97316",
 };
 
 const TYPE_BADGE: Record<string, string> = {
@@ -64,6 +81,32 @@ const TYPE_BADGE: Record<string, string> = {
     "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300",
   queue: "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300",
   api: "bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300",
+  cache:
+    "bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300",
+  frontend: "bg-pink-100 dark:bg-pink-900/40 text-pink-700 dark:text-pink-300",
+  gateway:
+    "bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300",
+  smart_contract:
+    "bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300",
+  infrastructure:
+    "bg-gray-100 dark:bg-gray-900/40 text-gray-700 dark:text-gray-300",
+  integration:
+    "bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300",
+  agent: "bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300",
+  worker:
+    "bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300",
+  middleware: "bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300",
+  mobile_app:
+    "bg-pink-100 dark:bg-pink-900/40 text-pink-700 dark:text-pink-300",
+  web_app: "bg-pink-100 dark:bg-pink-900/40 text-pink-700 dark:text-pink-300",
+  actor: "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300",
+  constraint: "bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300",
+  compute: "bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300",
+  security: "bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300",
+  monitoring:
+    "bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300",
+  pipeline:
+    "bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300",
 };
 
 const DEFAULT_COLOR = "#6b7280";
@@ -95,6 +138,7 @@ function DepForceGraph({
 
   useEffect(() => {
     const existing = new Map(nodesRef.current.map((n) => [n.id, n]));
+    const spread = Math.min(width, height) * 0.35;
     nodesRef.current = rawNodes.map((n) => {
       const prev = existing.get(n.id);
       if (prev)
@@ -103,8 +147,8 @@ function DepForceGraph({
         id: n.id,
         name: n.name,
         component_type: n.component_type,
-        x: width / 2 + (Math.random() - 0.5) * 200,
-        y: height / 2 + (Math.random() - 0.5) * 200,
+        x: width / 2 + (Math.random() - 0.5) * spread * 2,
+        y: height / 2 + (Math.random() - 0.5) * spread * 2,
         vx: 0,
         vy: 0,
       };
@@ -115,6 +159,10 @@ function DepForceGraph({
   useEffect(() => {
     let running = true;
     let alpha = 1;
+
+    const canvasScale = Math.min(width, height);
+    const repulsionStrength = canvasScale * 0.8;
+    const edgeTargetLen = canvasScale * 0.15;
 
     function tick() {
       if (!running) return;
@@ -134,7 +182,7 @@ function DepForceGraph({
           let dx = b.x - a.x;
           let dy = b.y - a.y;
           const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-          const force = (200 * alpha) / (dist * dist);
+          const force = (repulsionStrength * alpha) / (dist * dist);
           dx *= force;
           dy *= force;
           if (a.id !== dragNode) {
@@ -156,7 +204,7 @@ function DepForceGraph({
         const dx = b.x - a.x;
         const dy = b.y - a.y;
         const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-        const force = (dist - 120) * 0.02 * alpha;
+        const force = (dist - edgeTargetLen) * 0.02 * alpha;
         if (a.id !== dragNode) {
           a.vx += (dx / dist) * force;
           a.vy += (dy / dist) * force;
@@ -325,6 +373,7 @@ function DepForceGraph({
 
 export function DependencyMapPage() {
   const { projectId } = useParams<{ projectId: string }>();
+  const navigate = useNavigate();
   const { toast } = useToast();
 
   const [graph, setGraph] = useState<DepGraph | null>(null);
@@ -395,6 +444,16 @@ export function DependencyMapPage() {
       <PageHeader
         title="Dependency Map"
         description="Visualize component dependencies and detect cycles."
+        action={
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate(`/projects/${projectId}`)}
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </Button>
+        }
       />
 
       {/* Stats bar */}

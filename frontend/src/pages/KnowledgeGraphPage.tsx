@@ -33,17 +33,18 @@ import { Input, Select } from "../components/common/Input";
 import { EmptyState, GraphIllustration } from "../components/common/EmptyState";
 import { relativeTime } from "../lib/utils";
 
-const ENTITY_TYPES = [
-  "concept",
-  "technology",
-  "decision",
-  "component",
-] as const;
 const RELATION_TYPES = [
   "depends_on",
   "uses",
   "implements",
   "relates_to",
+  "authenticates",
+  "manages",
+  "feeds",
+  "propagates_to",
+  "reads",
+  "stores",
+  "processes",
 ] as const;
 
 const entityTypeColors: Record<string, string> = {
@@ -51,6 +52,15 @@ const entityTypeColors: Record<string, string> = {
   technology: "#3b82f6", // blue
   decision: "#F07167", // coral
   component: "#10b981", // emerald
+  service: "#38bdf8", // cyan
+  infrastructure: "#f59e0b", // amber
+  idea: "#f472b6", // rose
+  feature: "#a78bfa", // light violet
+  module: "#06b6d4", // dark cyan
+  api: "#22d3ee", // teal
+  database: "#fb923c", // orange
+  person: "#34d399", // light emerald
+  process: "#e879f9", // fuchsia
 };
 
 const entityTypeBadge: Record<string, string> = {
@@ -61,7 +71,51 @@ const entityTypeBadge: Record<string, string> = {
   decision: "bg-coral/10 text-coral",
   component:
     "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300",
+  service: "bg-cyan-100 dark:bg-cyan-900/40 text-cyan-700 dark:text-cyan-300",
+  infrastructure:
+    "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300",
+  idea: "bg-pink-100 dark:bg-pink-900/40 text-pink-700 dark:text-pink-300",
+  feature:
+    "bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300",
+  module: "bg-cyan-100 dark:bg-cyan-900/40 text-cyan-700 dark:text-cyan-300",
+  api: "bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300",
+  database:
+    "bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300",
+  person:
+    "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300",
+  process:
+    "bg-fuchsia-100 dark:bg-fuchsia-900/40 text-fuchsia-700 dark:text-fuchsia-300",
 };
+
+/* ---------- Mermaid Generator ---------- */
+
+function generateMermaid(nodes: GraphNode[], edges: GraphEdge[]): string {
+  if (nodes.length === 0) return "graph TD\n  empty[No data - click Show All]";
+  const lines = ["graph TD"];
+  const nodeIdMap = new Map<string, string>();
+
+  nodes.forEach((n, i) => {
+    const sid = `N${i}`;
+    nodeIdMap.set(n.id, sid);
+    const shape =
+      n.entity_type === "database"
+        ? `[(${n.name})]`
+        : n.entity_type === "service" || n.entity_type === "api"
+          ? `[/${n.name}/]`
+          : `[${n.name}]`;
+    lines.push(`  ${sid}${shape}`);
+  });
+
+  edges.forEach((e) => {
+    const src = nodeIdMap.get(e.source);
+    const tgt = nodeIdMap.get(e.target);
+    if (src && tgt) {
+      lines.push(`  ${src} -->|${e.relation_type}| ${tgt}`);
+    }
+  });
+
+  return lines.join("\n");
+}
 
 /* ---------- Force Graph Component ---------- */
 
@@ -98,9 +152,10 @@ function ForceGraph({
   const [dragNode, setDragNode] = useState<string | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
-  // Initialize nodes with random positions
+  // Initialize nodes with random positions spread across the canvas
   useEffect(() => {
     const existing = new Map(nodesRef.current.map((n) => [n.id, n]));
+    const spread = Math.min(width, height) * 0.35;
     nodesRef.current = rawNodes.map((n) => {
       const prev = existing.get(n.id);
       if (prev) return { ...prev, name: n.name, entity_type: n.entity_type };
@@ -108,8 +163,8 @@ function ForceGraph({
         id: n.id,
         name: n.name,
         entity_type: n.entity_type,
-        x: width / 2 + (Math.random() - 0.5) * 200,
-        y: height / 2 + (Math.random() - 0.5) * 200,
+        x: width / 2 + (Math.random() - 0.5) * spread * 2,
+        y: height / 2 + (Math.random() - 0.5) * spread * 2,
         vx: 0,
         vy: 0,
       };
@@ -134,6 +189,11 @@ function ForceGraph({
         return;
       }
 
+      // Scale forces to canvas size so graph fills available space
+      const canvasScale = Math.min(width, height);
+      const repulsionStrength = canvasScale * 0.8;
+      const edgeTargetLen = canvasScale * 0.15;
+
       // Repulsion between all nodes
       for (let i = 0; i < nodes.length; i++) {
         for (let j = i + 1; j < nodes.length; j++) {
@@ -142,7 +202,7 @@ function ForceGraph({
           let dx = b.x - a.x;
           let dy = b.y - a.y;
           const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-          const force = (200 * alpha) / (dist * dist);
+          const force = (repulsionStrength * alpha) / (dist * dist);
           dx *= force;
           dy *= force;
 
@@ -166,7 +226,7 @@ function ForceGraph({
         const dx = b.x - a.x;
         const dy = b.y - a.y;
         const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-        const force = (dist - 120) * 0.02 * alpha;
+        const force = (dist - edgeTargetLen) * 0.02 * alpha;
 
         if (a.id !== dragNode) {
           a.vx += (dx / dist) * force;
@@ -178,13 +238,13 @@ function ForceGraph({
         }
       }
 
-      // Center gravity
+      // Center gravity (gentle)
       const cx = width / 2;
       const cy = height / 2;
       for (const n of nodes) {
         if (n.id === dragNode) continue;
-        n.vx += (cx - n.x) * 0.002 * alpha;
-        n.vy += (cy - n.y) * 0.002 * alpha;
+        n.vx += (cx - n.x) * 0.001 * alpha;
+        n.vy += (cy - n.y) * 0.001 * alpha;
         n.vx *= damping;
         n.vy *= damping;
         n.x += n.vx;
@@ -335,7 +395,7 @@ export function KnowledgeGraphPage() {
 
   // Add entity form
   const [addName, setAddName] = useState("");
-  const [addType, setAddType] = useState<string>(ENTITY_TYPES[0]);
+  const [addType, setAddType] = useState<string>("concept");
   const [addDesc, setAddDesc] = useState("");
   const [addLoading, setAddLoading] = useState(false);
 
@@ -353,6 +413,9 @@ export function KnowledgeGraphPage() {
   });
   const [startNodeId, setStartNodeId] = useState("");
   const [graphLoading, setGraphLoading] = useState(false);
+
+  // View mode (graph vs mermaid text)
+  const [viewMode, setViewMode] = useState<"graph" | "mermaid">("graph");
 
   // Search
   const [searchQuery, setSearchQuery] = useState("");
@@ -501,7 +564,22 @@ export function KnowledgeGraphPage() {
         `/projects/${projectId}/knowledge/traverse`,
         { start_id: startNodeId, max_depth: 3 },
       );
-      setGraphData(data);
+      // Deduplicate nodes (traversal returns same node at multiple depths)
+      const seenNodes = new Map<string, GraphNode>();
+      for (const node of data.nodes) {
+        if (!seenNodes.has(node.id)) seenNodes.set(node.id, node);
+      }
+      const seenEdges = new Set<string>();
+      const uniqueEdges = data.edges.filter((e) => {
+        const key = `${e.source}-${e.relation_type}-${e.target}`;
+        if (seenEdges.has(key)) return false;
+        seenEdges.add(key);
+        return true;
+      });
+      setGraphData({
+        nodes: Array.from(seenNodes.values()),
+        edges: uniqueEdges,
+      });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Traversal failed";
       toast(msg, "error");
@@ -509,6 +587,40 @@ export function KnowledgeGraphPage() {
       setGraphLoading(false);
     }
   };
+
+  const handleShowAll = useCallback(() => {
+    setGraphLoading(true);
+    try {
+      const graphNodes: GraphNode[] = entities.map((e) => ({
+        id: e.id,
+        name: e.name,
+        entity_type: e.entity_type,
+        depth: 0,
+      }));
+      const graphEdges: GraphEdge[] = relations
+        .filter(
+          (r) =>
+            entities.some((e) => e.id === r.source_id) &&
+            entities.some((e) => e.id === r.target_id),
+        )
+        .map((r) => ({
+          source: r.source_id,
+          target: r.target_id,
+          relation_type: r.relation_type,
+          weight: r.weight ?? null,
+        }));
+      setGraphData({ nodes: graphNodes, edges: graphEdges });
+    } finally {
+      setGraphLoading(false);
+    }
+  }, [entities, relations]);
+
+  // Auto-load graph when entities/relations are fetched
+  useEffect(() => {
+    if (!loading && entities.length > 0 && graphData.nodes.length === 0) {
+      handleShowAll();
+    }
+  }, [loading, entities.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -528,6 +640,18 @@ export function KnowledgeGraphPage() {
       setSearching(false);
     }
   };
+
+  // Derive entity types dynamically from actual data
+  const entityTypes = useMemo(() => {
+    const types = new Set(entities.map((e) => e.entity_type));
+    return Array.from(types).sort();
+  }, [entities]);
+
+  // Types present in current graph (for legend)
+  const graphEntityTypes = useMemo(() => {
+    const types = new Set(graphData.nodes.map((n) => n.entity_type));
+    return Array.from(types).sort();
+  }, [graphData.nodes]);
 
   const displayedEntities = searchResults ?? entities;
 
@@ -593,7 +717,7 @@ export function KnowledgeGraphPage() {
               className="flex-1 px-2 py-1.5 text-xs"
             >
               <option value="">All types</option>
-              {ENTITY_TYPES.map((t) => (
+              {entityTypes.map((t) => (
                 <option key={t} value={t}>
                   {t}
                 </option>
@@ -661,7 +785,7 @@ export function KnowledgeGraphPage() {
                 onChange={(e) => setAddType(e.target.value)}
                 className="py-1.5"
               >
-                {ENTITY_TYPES.map((t) => (
+                {Object.keys(entityTypeColors).map((t) => (
                   <option key={t} value={t}>
                     {t}
                   </option>
@@ -712,36 +836,73 @@ export function KnowledgeGraphPage() {
               <Network className="w-3.5 h-3.5" />
               Traverse
             </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={handleShowAll}
+              loading={graphLoading}
+            >
+              <Network className="w-3.5 h-3.5" />
+              Show All
+            </Button>
+
+            {/* View mode toggle */}
+            <div className="flex items-center gap-0 ml-3">
+              <button
+                onClick={() => setViewMode("graph")}
+                className={`px-3 py-1 text-xs font-medium rounded-l-md border ${viewMode === "graph" ? "bg-teal/10 text-teal border-teal" : "text-gray-400 border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+              >
+                Graph
+              </button>
+              <button
+                onClick={() => setViewMode("mermaid")}
+                className={`px-3 py-1 text-xs font-medium rounded-r-md border-t border-r border-b ${viewMode === "mermaid" ? "bg-teal/10 text-teal border-teal" : "text-gray-400 border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+              >
+                Mermaid
+              </button>
+            </div>
           </div>
 
           {/* Graph visualization */}
-          <div
-            ref={graphContainerRef}
-            className="flex-1 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden"
-          >
-            <ForceGraph
-              nodes={graphData.nodes}
-              edges={graphData.edges}
-              width={graphSize.width}
-              height={graphSize.height}
-            />
-          </div>
+          {viewMode === "mermaid" ? (
+            <div className="flex-1 min-h-[400px] border border-gray-200 dark:border-gray-700 rounded-lg overflow-auto p-4 bg-gray-50 dark:bg-gray-800/30">
+              <pre className="text-xs font-mono text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                {generateMermaid(graphData.nodes, graphData.edges)}
+              </pre>
+            </div>
+          ) : (
+            <div
+              ref={graphContainerRef}
+              className="flex-1 min-h-[400px] border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden"
+            >
+              <ForceGraph
+                nodes={graphData.nodes}
+                edges={graphData.edges}
+                width={graphSize.width}
+                height={graphSize.height}
+              />
+            </div>
+          )}
 
-          {/* Legend */}
-          <div className="flex items-center gap-4 mt-2">
-            {ENTITY_TYPES.map((t) => (
-              <div
-                key={t}
-                className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400"
-              >
-                <span
-                  className="w-3 h-3 rounded-full"
-                  style={{ backgroundColor: entityTypeColors[t] }}
-                />
-                {t}
-              </div>
-            ))}
-          </div>
+          {/* Legend — shows types present in current graph */}
+          {graphEntityTypes.length > 0 && (
+            <div className="flex items-center gap-4 mt-2 flex-wrap">
+              {graphEntityTypes.map((t) => (
+                <div
+                  key={t}
+                  className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400"
+                >
+                  <span
+                    className="w-3 h-3 rounded-full"
+                    style={{
+                      backgroundColor: entityTypeColors[t] || "#6b7280",
+                    }}
+                  />
+                  {t}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

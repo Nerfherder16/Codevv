@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Tldraw } from "@tldraw/tldraw";
+import { Tldraw, createShapeId, toRichText, Editor } from "@tldraw/tldraw";
+import "@tldraw/tldraw/tldraw.css";
 import {
   ArrowLeft,
   Plus,
@@ -55,6 +56,161 @@ const typeColors: Record<ComponentType, string> = {
     "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300",
 };
 
+type TldrawColor =
+  | "blue"
+  | "green"
+  | "yellow"
+  | "violet"
+  | "light-red"
+  | "orange"
+  | "red"
+  | "light-blue"
+  | "light-green"
+  | "grey";
+
+const tldrawColors: Record<string, TldrawColor> = {
+  service: "blue",
+  api: "blue",
+  middleware: "light-blue",
+  route: "light-blue",
+  database: "green",
+  cache: "violet",
+  queue: "yellow",
+  frontend: "light-red",
+  gateway: "orange",
+  smart_contract: "violet",
+  worker: "yellow",
+  account: "light-green",
+  infrastructure: "grey",
+  integration: "orange",
+  agent: "red",
+  mobile_app: "light-red",
+  web_app: "light-red",
+  library: "light-blue",
+  flow: "yellow",
+  transaction: "green",
+  actor: "blue",
+  constraint: "red",
+  compute: "blue",
+  security: "red",
+  tool: "grey",
+  pipeline: "orange",
+  monitoring: "yellow",
+  blockchain_infra: "violet",
+};
+
+interface DependencyEdge {
+  source_id: string;
+  target_id: string;
+  relation_type: string;
+}
+
+function populateTldrawShapes(
+  editor: Editor,
+  components: CanvasComponent[],
+  edges?: DependencyEdge[],
+) {
+  if (components.length === 0) return;
+
+  // Check if shapes already exist (avoid duplicating on re-render)
+  const existing = editor.getCurrentPageShapes();
+  if (existing.length > 0) return;
+
+  const COL_WIDTH = 320;
+  const ROW_HEIGHT = 110;
+  const SHAPE_W = 280;
+  const SHAPE_H = 90;
+  const COLS = Math.min(4, Math.ceil(Math.sqrt(components.length)));
+  const GAP_X = 40;
+  const GAP_Y = 20;
+
+  // Create shapes and store id mapping for arrows
+  const compIdToShapeId = new Map<string, string>();
+
+  const shapes = components.map((comp, i) => {
+    const col = i % COLS;
+    const row = Math.floor(i / COLS);
+    const color = tldrawColors[comp.component_type] || ("grey" as TldrawColor);
+
+    const label = comp.tech_stack
+      ? `${comp.name}\n${comp.tech_stack}`
+      : comp.name;
+
+    const shapeId = createShapeId();
+    compIdToShapeId.set(comp.id, shapeId as string);
+
+    return {
+      id: shapeId,
+      type: "geo" as const,
+      x: col * (COL_WIDTH + GAP_X),
+      y: row * (ROW_HEIGHT + GAP_Y),
+      props: {
+        geo: "rectangle" as const,
+        w: SHAPE_W,
+        h: SHAPE_H,
+        fill: "solid" as const,
+        color,
+        font: "sans" as const,
+        size: "m" as const,
+        align: "middle" as const,
+        verticalAlign: "middle" as const,
+        richText: toRichText(label),
+      },
+    };
+  });
+
+  editor.createShapes(shapes);
+
+  // Create arrows for dependency edges
+  if (edges && edges.length > 0) {
+    const arrowShapes = edges
+      .map((e) => {
+        const sourceShapeId = compIdToShapeId.get(e.source_id);
+        const targetShapeId = compIdToShapeId.get(e.target_id);
+        if (!sourceShapeId || !targetShapeId) return null;
+
+        const sourceIdx = components.findIndex((c) => c.id === e.source_id);
+        const targetIdx = components.findIndex((c) => c.id === e.target_id);
+        if (sourceIdx === -1 || targetIdx === -1) return null;
+
+        const srcCol = sourceIdx % COLS;
+        const srcRow = Math.floor(sourceIdx / COLS);
+        const tgtCol = targetIdx % COLS;
+        const tgtRow = Math.floor(targetIdx / COLS);
+
+        return {
+          id: createShapeId(),
+          type: "arrow" as const,
+          x: 0,
+          y: 0,
+          props: {
+            start: {
+              x: srcCol * (COL_WIDTH + GAP_X) + SHAPE_W / 2,
+              y: srcRow * (ROW_HEIGHT + GAP_Y) + SHAPE_H,
+            },
+            end: {
+              x: tgtCol * (COL_WIDTH + GAP_X) + SHAPE_W / 2,
+              y: tgtRow * (ROW_HEIGHT + GAP_Y),
+            },
+            color: "grey" as const,
+            size: "s" as const,
+            arrowheadEnd: "arrow" as const,
+          },
+        };
+      })
+      .filter(Boolean);
+
+    if (arrowShapes.length > 0) {
+      editor.createShapes(arrowShapes as any);
+    }
+  }
+
+  // Small delay to let shapes render, then zoom to fit
+  requestAnimationFrame(() => {
+    editor.zoomToFit();
+  });
+}
+
 export function CanvasEditorPage() {
   const { projectId, canvasId } = useParams<{
     projectId: string;
@@ -66,6 +222,8 @@ export function CanvasEditorPage() {
   const [canvas, setCanvas] = useState<CanvasDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [panelOpen, setPanelOpen] = useState(true);
+  const [hideTools, setHideTools] = useState(true);
+  const editorRef = useRef<Editor | null>(null);
 
   // Add-component form state
   const [compName, setCompName] = useState("");
@@ -125,6 +283,37 @@ export function CanvasEditorPage() {
           : prev,
       );
 
+      // Add shape to live tldraw canvas
+      if (editorRef.current) {
+        const ed = editorRef.current;
+        const count = ed.getCurrentPageShapes().length;
+        const col = count % 4;
+        const row = Math.floor(count / 4);
+        const color = tldrawColors[component.component_type] || "grey";
+        const label = component.tech_stack
+          ? `${component.name}\n${component.tech_stack}`
+          : component.name;
+
+        ed.createShape({
+          id: createShapeId(),
+          type: "geo",
+          x: col * 360,
+          y: row * 130,
+          props: {
+            geo: "rectangle",
+            w: 280,
+            h: 90,
+            fill: "solid",
+            color,
+            font: "sans",
+            size: "m",
+            align: "middle",
+            verticalAlign: "middle",
+            richText: toRichText(label),
+          },
+        });
+      }
+
       toast("Component added!", "success");
       setCompName("");
       setCompTechStack("");
@@ -174,7 +363,7 @@ export function CanvasEditorPage() {
         <Button
           variant="ghost"
           className="mt-4"
-          onClick={() => navigate(`/projects/${projectId}/canvases`)}
+          onClick={() => navigate(`/projects/${projectId}/canvas`)}
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Canvases
@@ -191,7 +380,7 @@ export function CanvasEditorPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate(`/projects/${projectId}/canvases`)}
+            onClick={() => navigate(`/projects/${projectId}/canvas`)}
           >
             <ArrowLeft className="w-4 h-4" />
           </Button>
@@ -203,25 +392,70 @@ export function CanvasEditorPage() {
             {canvas.component_count === 1 ? "component" : "components"}
           </span>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setPanelOpen(!panelOpen)}
-        >
-          {panelOpen ? (
-            <ChevronRight className="w-4 h-4" />
-          ) : (
-            <ChevronLeft className="w-4 h-4" />
-          )}
-          Components
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setHideTools(!hideTools)}
+          >
+            <Layers className="w-4 h-4" />
+            {hideTools ? "Show Tools" : "Hide Tools"}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setPanelOpen(!panelOpen)}
+          >
+            {panelOpen ? (
+              <ChevronRight className="w-4 h-4" />
+            ) : (
+              <ChevronLeft className="w-4 h-4" />
+            )}
+            Components
+          </Button>
+        </div>
       </div>
 
       {/* Main content area */}
       <div className="flex flex-1 overflow-hidden">
         {/* Tldraw canvas */}
         <div className="flex-1 relative">
-          <Tldraw />
+          <Tldraw
+            hideUi={hideTools}
+            onMount={async (editor) => {
+              editorRef.current = editor;
+              if (canvas?.components.length) {
+                // Fetch dependency edges for this project
+                try {
+                  const depGraph = await api.get<{
+                    nodes: Array<{
+                      id: string;
+                      name: string;
+                      component_type: string;
+                    }>;
+                    edges: DependencyEdge[];
+                  }>(`/projects/${projectId}/dependencies`);
+                  // Filter edges to only those involving components in this canvas
+                  const canvasCompIds = new Set(
+                    canvas.components.map((c) => c.id),
+                  );
+                  const relevantEdges = depGraph.edges.filter(
+                    (e) =>
+                      canvasCompIds.has(e.source_id) &&
+                      canvasCompIds.has(e.target_id),
+                  );
+                  populateTldrawShapes(
+                    editor,
+                    canvas.components,
+                    relevantEdges,
+                  );
+                } catch {
+                  // If dep graph fails, just populate shapes without arrows
+                  populateTldrawShapes(editor, canvas.components);
+                }
+              }
+            }}
+          />
         </div>
 
         {/* Side panel */}

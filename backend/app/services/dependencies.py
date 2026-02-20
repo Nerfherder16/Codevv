@@ -35,7 +35,6 @@ async def build_dependency_graph(project_id: uuid.UUID, db: AsyncSession) -> dic
     entity_result = await db.execute(
         select(KnowledgeEntity).where(
             KnowledgeEntity.project_id == project_id,
-            KnowledgeEntity.entity_type == "component",
         )
     )
     entities = entity_result.scalars().all()
