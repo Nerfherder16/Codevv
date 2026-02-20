@@ -53,11 +53,14 @@ export function DocumentsPage() {
     try {
       const form = new FormData();
       form.append("file", file);
+      const headers: Record<string, string> = {};
+      const token = localStorage.getItem("bh-token");
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
       const res = await fetch(`/api/projects/${projectId}/documents/upload`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("bh-token")}`,
-        },
+        headers,
         body: form,
       });
       if (!res.ok) {

@@ -4,7 +4,9 @@ import React, {
   useCallback,
   useRef,
   useMemo,
+  useId,
 } from "react";
+import mermaid from "mermaid";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Plus,
@@ -97,12 +99,25 @@ function generateMermaid(nodes: GraphNode[], edges: GraphEdge[]): string {
   nodes.forEach((n, i) => {
     const sid = `N${i}`;
     nodeIdMap.set(n.id, sid);
-    const shape =
-      n.entity_type === "database"
-        ? `[(${n.name})]`
-        : n.entity_type === "service" || n.entity_type === "api"
-          ? `[/${n.name}/]`
-          : `[${n.name}]`;
+    // Sanitize name for mermaid (remove special chars that break syntax)
+    const safeName = n.name.replace(/[[\](){}|#&;`"]/g, " ").trim();
+    let shape: string;
+    switch (n.entity_type) {
+      case "database":
+        shape = `[(${safeName})]`;
+        break;
+      case "service":
+      case "api":
+      case "infrastructure":
+        shape = `{{${safeName}}}`;
+        break;
+      case "smart_contract":
+      case "security":
+        shape = `[/${safeName}\\]`;
+        break;
+      default:
+        shape = `[${safeName}]`;
+    }
     lines.push(`  ${sid}${shape}`);
   });
 
@@ -155,7 +170,7 @@ function ForceGraph({
   // Initialize nodes with random positions spread across the canvas
   useEffect(() => {
     const existing = new Map(nodesRef.current.map((n) => [n.id, n]));
-    const spread = Math.min(width, height) * 0.35;
+    const spread = Math.min(width, height) * 0.45;
     nodesRef.current = rawNodes.map((n) => {
       const prev = existing.get(n.id);
       if (prev) return { ...prev, name: n.name, entity_type: n.entity_type };
@@ -191,8 +206,10 @@ function ForceGraph({
 
       // Scale forces to canvas size so graph fills available space
       const canvasScale = Math.min(width, height);
-      const repulsionStrength = canvasScale * 0.8;
-      const edgeTargetLen = canvasScale * 0.15;
+      const nodeCount = nodes.length;
+      const densityFactor = Math.max(1, nodeCount / 10);
+      const repulsionStrength = canvasScale * densityFactor * 0.6;
+      const edgeTargetLen = canvasScale * 0.2;
 
       // Repulsion between all nodes
       for (let i = 0; i < nodes.length; i++) {
@@ -250,8 +267,8 @@ function ForceGraph({
         n.x += n.vx;
         n.y += n.vy;
         // Clamp to bounds
-        n.x = Math.max(30, Math.min(width - 30, n.x));
-        n.y = Math.max(30, Math.min(height - 30, n.y));
+        n.x = Math.max(60, Math.min(width - 60, n.x));
+        n.y = Math.max(40, Math.min(height - 40, n.y));
       }
 
       setRenderTick((t) => t + 1);
@@ -378,6 +395,68 @@ function ForceGraph({
         </g>
       ))}
     </svg>
+  );
+}
+
+/* ---------- Mermaid Rendered Diagram ---------- */
+
+mermaid.initialize({
+  startOnLoad: false,
+  theme: "dark",
+  themeVariables: {
+    primaryColor: "#1e1b2e",
+    primaryBorderColor: "#38bdf8",
+    primaryTextColor: "#e5e7eb",
+    lineColor: "#94a3b8",
+    secondaryColor: "#252236",
+    tertiaryColor: "#2d2a3e",
+  },
+});
+
+function MermaidDiagram({ definition }: { definition: string }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const uniqueId = useId().replace(/:/g, "-");
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    setError(null);
+
+    const id = `mermaid-${uniqueId}`;
+    mermaid
+      .render(id, definition)
+      .then(({ svg }) => {
+        if (containerRef.current) {
+          containerRef.current.innerHTML = svg;
+        }
+      })
+      .catch((err) => {
+        setError(err?.message || "Failed to render diagram");
+        if (containerRef.current) {
+          containerRef.current.innerHTML = "";
+        }
+      });
+  }, [definition, uniqueId]);
+
+  if (error) {
+    return (
+      <div className="flex-1 min-h-[400px] border border-gray-200 dark:border-gray-700 rounded-lg overflow-auto p-4 bg-gray-50 dark:bg-gray-800/30">
+        <p className="text-sm text-red-400 mb-2">Mermaid render error:</p>
+        <pre className="text-xs font-mono text-gray-400 whitespace-pre-wrap">
+          {error}
+        </pre>
+        <pre className="text-xs font-mono text-gray-500 mt-4 whitespace-pre-wrap">
+          {definition}
+        </pre>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      ref={containerRef}
+      className="flex-1 min-h-[400px] border border-gray-200 dark:border-gray-700 rounded-lg overflow-auto p-4 bg-gray-50 dark:bg-gray-800/30 [&_svg]:max-w-full [&_svg]:h-auto"
+    />
   );
 }
 
@@ -660,7 +739,7 @@ export function KnowledgeGraphPage() {
   }
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="flex flex-col" style={{ height: "calc(100vh - 7rem)" }}>
       <PageHeader
         title="Knowledge Graph"
         description="Map entities, relationships, and project knowledge."
@@ -865,11 +944,9 @@ export function KnowledgeGraphPage() {
 
           {/* Graph visualization */}
           {viewMode === "mermaid" ? (
-            <div className="flex-1 min-h-[400px] border border-gray-200 dark:border-gray-700 rounded-lg overflow-auto p-4 bg-gray-50 dark:bg-gray-800/30">
-              <pre className="text-xs font-mono text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-                {generateMermaid(graphData.nodes, graphData.edges)}
-              </pre>
-            </div>
+            <MermaidDiagram
+              definition={generateMermaid(graphData.nodes, graphData.edges)}
+            />
           ) : (
             <div
               ref={graphContainerRef}

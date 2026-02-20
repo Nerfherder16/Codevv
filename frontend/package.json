@@ -9,32 +9,33 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@livekit/components-react": "^2.8.2",
+    "@livekit/components-styles": "^1.1.4",
+    "@tldraw/tldraw": "^4.4.0",
+    "clsx": "^2.1.1",
+    "d3": "^7.9.0",
+    "framer-motion": "^11.18.0",
+    "livekit-client": "^2.8.2",
+    "lucide-react": "^0.468.0",
+    "mermaid": "^11.12.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.1.1",
-    "lucide-react": "^0.468.0",
-    "@tldraw/tldraw": "^4.4.0",
-    "yjs": "^13.6.20",
-    "y-websocket": "^2.0.4",
-    "@livekit/components-react": "^2.8.2",
-    "@livekit/components-styles": "^1.1.4",
-    "livekit-client": "^2.8.2",
-    "d3": "^7.9.0",
     "react-syntax-highlighter": "^15.6.1",
-    "clsx": "^2.1.1",
     "tailwind-merge": "^2.6.0",
-    "framer-motion": "^11.18.0"
+    "y-websocket": "^2.0.4",
+    "yjs": "^13.6.20"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.0.0",
+    "@types/d3": "^7.4.3",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",
-    "@types/d3": "^7.4.3",
     "@types/react-syntax-highlighter": "^15.5.13",
     "@vitejs/plugin-react": "^4.3.4",
-    "typescript": "^5.7.2",
-    "vite": "^6.0.5",
+    "autoprefixer": "^10.4.20",
     "tailwindcss": "^4.0.0",
-    "@tailwindcss/vite": "^4.0.0",
-    "autoprefixer": "^10.4.20"
+    "typescript": "^5.7.2",
+    "vite": "^6.0.5"
   }
 }

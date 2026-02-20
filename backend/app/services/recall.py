@@ -50,6 +50,10 @@ async def browse_recall(
     return data.get("results", data if isinstance(data, list) else [])
 
 
+async def get_memory_by_id(memory_id: str) -> dict:
+    return await _recall_get(f"/memory/{memory_id}")
+
+
 async def get_pinned(domain: str) -> list[dict]:
     results = await browse_recall(domain, limit=100)
     return [r for r in results if r.get("pinned")]

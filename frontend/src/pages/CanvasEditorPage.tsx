@@ -422,37 +422,38 @@ export function CanvasEditorPage() {
         <div className="flex-1 relative">
           <Tldraw
             hideUi={hideTools}
-            onMount={async (editor) => {
+            onMount={(editor) => {
               editorRef.current = editor;
               if (canvas?.components.length) {
-                // Fetch dependency edges for this project
-                try {
-                  const depGraph = await api.get<{
-                    nodes: Array<{
-                      id: string;
-                      name: string;
-                      component_type: string;
-                    }>;
-                    edges: DependencyEdge[];
-                  }>(`/projects/${projectId}/dependencies`);
-                  // Filter edges to only those involving components in this canvas
-                  const canvasCompIds = new Set(
-                    canvas.components.map((c) => c.id),
-                  );
-                  const relevantEdges = depGraph.edges.filter(
-                    (e) =>
-                      canvasCompIds.has(e.source_id) &&
-                      canvasCompIds.has(e.target_id),
-                  );
-                  populateTldrawShapes(
-                    editor,
-                    canvas.components,
-                    relevantEdges,
-                  );
-                } catch {
-                  // If dep graph fails, just populate shapes without arrows
-                  populateTldrawShapes(editor, canvas.components);
-                }
+                // Fire-and-forget: fetch deps then populate
+                // (onMount must NOT return a Promise — tldraw expects void or cleanup fn)
+                void (async () => {
+                  try {
+                    const depGraph = await api.get<{
+                      nodes: Array<{
+                        id: string;
+                        name: string;
+                        component_type: string;
+                      }>;
+                      edges: DependencyEdge[];
+                    }>(`/projects/${projectId}/dependencies`);
+                    const canvasCompIds = new Set(
+                      canvas.components.map((c) => c.id),
+                    );
+                    const relevantEdges = depGraph.edges.filter(
+                      (e) =>
+                        canvasCompIds.has(e.source_id) &&
+                        canvasCompIds.has(e.target_id),
+                    );
+                    populateTldrawShapes(
+                      editor,
+                      canvas.components,
+                      relevantEdges,
+                    );
+                  } catch {
+                    populateTldrawShapes(editor, canvas.components);
+                  }
+                })();
               }
             }}
           />
