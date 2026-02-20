@@ -98,9 +98,9 @@ export function LoginPage() {
             transition={{ duration: 0.6 }}
           >
             <img
-              src="/codevvicon.png"
+              src="/codevvtransrev.png"
               alt=""
-              className="w-10 h-10 opacity-80"
+              className="w-12 h-12 opacity-80"
             />
           </motion.div>
 
@@ -129,23 +129,7 @@ export function LoginPage() {
             </motion.p>
           </div>
 
-          <motion.div
-            className="flex flex-wrap gap-3"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5, duration: 0.8 }}
-          >
-            {["AI Architecture", "Real-time Collab", "One-Click Deploy"].map(
-              (label) => (
-                <span
-                  key={label}
-                  className="px-4 py-2 rounded-full text-xs font-medium text-gray-400 border border-white/[0.06] bg-white/[0.02]"
-                >
-                  {label}
-                </span>
-              ),
-            )}
-          </motion.div>
+          <div />
         </div>
 
         {/* Floating shapes */}
@@ -183,7 +167,11 @@ export function LoginPage() {
         >
           {/* Mobile logo */}
           <div className="lg:hidden mb-12 text-center">
-            <img src="/codevvlogo.png" alt="Codevv" className="w-28 mx-auto" />
+            <img
+              src="/codevvrevlogo.png"
+              alt="Codevv"
+              className="w-40 mx-auto"
+            />
           </div>
 
           {/* Heading with animated swap */}
