@@ -9,8 +9,6 @@ import {
   Video,
   Rocket,
   Settings,
-  ChevronLeft,
-  ChevronRight,
   BookOpen,
   GitBranch,
   Workflow,
@@ -113,7 +111,7 @@ export function Sidebar() {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 py-2 overflow-y-auto">
+      <nav className="flex-1 py-2 overflow-y-auto relative z-0">
         {NAV_GROUPS.map((group) => (
           <div key={group.label} className="mb-1">
             {!collapsed && (
@@ -183,15 +181,23 @@ export function Sidebar() {
       {/* Collapse toggle — inward notch on right edge */}
       <button
         onClick={toggleCollapse}
-        className="absolute top-1/2 -translate-y-1/2 -right-[1px] z-10 flex items-center group"
+        className="absolute top-1/2 -translate-y-1/2 z-20 flex items-center group cursor-pointer"
+        style={{ right: "-6px" }}
       >
-        <div className="w-4 h-10 bg-gray-200 dark:bg-gray-800 rounded-r-lg border border-l-0 border-gray-300 dark:border-gray-700 flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors">
-          {collapsed ? (
-            <ChevronRight className="w-3 h-3 text-gray-500 dark:text-gray-400" />
-          ) : (
-            <ChevronLeft className="w-3 h-3 text-gray-500 dark:text-gray-400" />
-          )}
-        </div>
+        <svg width="20" height="44" viewBox="0 0 20 44" className="block">
+          {/* Notch fill — lighter to create highlighted indent */}
+          <path
+            d="M 14 15 L 4 22 L 14 29 Z"
+            className="fill-white dark:fill-white/[0.08] group-hover:fill-gray-100 dark:group-hover:fill-white/[0.15] transition-colors"
+          />
+          {/* Notch border strokes */}
+          <path
+            d="M 14 15 L 4 22 L 14 29"
+            fill="none"
+            strokeWidth="1"
+            className="stroke-gray-300 dark:stroke-gray-600 group-hover:stroke-gray-400 dark:group-hover:stroke-gray-400 transition-colors"
+          />
+        </svg>
       </button>
     </aside>
   );
