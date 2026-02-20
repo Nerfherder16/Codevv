@@ -167,23 +167,43 @@ function ForceGraph({
   const [dragNode, setDragNode] = useState<string | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
-  // Pan / zoom state
+  // Pan / zoom
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
-  const panDrag = useRef<{
-    active: boolean;
-    startX: number;
-    startY: number;
-    panX: number;
-    panY: number;
-  }>({ active: false, startX: 0, startY: 0, panX: 0, panY: 0 });
+  const panDrag = useRef({
+    active: false,
+    startX: 0,
+    startY: 0,
+    panX: 0,
+    panY: 0,
+  });
 
-  // Initialize nodes centered in the container's coordinate space
+  // Compute degree (connection count) per node
+  const degreeMap = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const e of edges) {
+      m.set(e.source, (m.get(e.source) || 0) + 1);
+      m.set(e.target, (m.get(e.target) || 0) + 1);
+    }
+    return m;
+  }, [edges]);
+
+  const maxDegree = useMemo(
+    () => Math.max(1, ...Array.from(degreeMap.values())),
+    [degreeMap],
+  );
+
+  function nodeRadius(id: string) {
+    const deg = degreeMap.get(id) || 0;
+    return 12 + (deg / maxDegree) * 20; // 12px min, 32px max
+  }
+
+  // Initialize nodes — tight cluster around center
   useEffect(() => {
     const existing = new Map(nodesRef.current.map((n) => [n.id, n]));
-    const spread = Math.min(width, height) * 0.35;
     const cx = width / 2;
     const cy = height / 2;
+    const spread = Math.min(width, height) * 0.15;
     nodesRef.current = rawNodes.map((n) => {
       const prev = existing.get(n.id);
       if (prev) return { ...prev, name: n.name, entity_type: n.entity_type };
@@ -203,30 +223,35 @@ function ForceGraph({
     setRenderTick((t) => t + 1);
   }, [rawNodes, width, height]);
 
-  // Force simulation — no hard clamping, center gravity keeps nodes in view
+  // Force simulation
   useEffect(() => {
     let running = true;
     let alpha = 1;
+
+    // Pre-compute connected set for orphan detection
+    const connected = new Set<string>();
+    for (const e of edges) {
+      connected.add(e.source);
+      connected.add(e.target);
+    }
 
     function tick() {
       if (!running) return;
 
       const nodes = nodesRef.current;
       const pinned = pinnedRef.current;
-      const damping = 0.88;
-      alpha *= 0.993;
+      const damping = 0.85;
+      alpha *= 0.994;
 
       if (alpha < 0.001) {
         frameRef.current = requestAnimationFrame(tick);
         return;
       }
 
-      const nodeCount = nodes.length;
-      const densityFactor = Math.max(1, nodeCount / 8);
-      const repulsionStrength = 600 * densityFactor;
-      const edgeTargetLen = 160;
+      // Moderate repulsion — enough to separate, not enough to scatter
+      const repulsionStrength = 400;
+      const edgeTargetLen = 120;
 
-      // Repulsion between all nodes
       for (let i = 0; i < nodes.length; i++) {
         for (let j = i + 1; j < nodes.length; j++) {
           const a = nodes[i];
@@ -234,7 +259,10 @@ function ForceGraph({
           let dx = b.x - a.x;
           let dy = b.y - a.y;
           const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-          const force = (repulsionStrength * alpha) / (dist * dist);
+          // Cap repulsion at close range to prevent explosions
+          const effectiveDist = Math.max(dist, 30);
+          const force =
+            (repulsionStrength * alpha) / (effectiveDist * effectiveDist);
           dx *= force;
           dy *= force;
 
@@ -251,7 +279,7 @@ function ForceGraph({
         }
       }
 
-      // Attraction along edges
+      // Edge attraction
       const nodeMap = new Map(nodes.map((n) => [n.id, n]));
       for (const edge of edges) {
         const a = nodeMap.get(edge.source);
@@ -260,7 +288,7 @@ function ForceGraph({
         const dx = b.x - a.x;
         const dy = b.y - a.y;
         const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-        const force = (dist - edgeTargetLen) * 0.025 * alpha;
+        const force = (dist - edgeTargetLen) * 0.03 * alpha;
 
         const aFixed = a.id === dragNode || pinned.has(a.id);
         const bFixed = b.id === dragNode || pinned.has(b.id);
@@ -274,13 +302,15 @@ function ForceGraph({
         }
       }
 
-      // Center gravity — no hard clamp, just gentle pull toward center
+      // Center gravity — strong for orphans, moderate for connected
       const cx = width / 2;
       const cy = height / 2;
       for (const n of nodes) {
         if (n.id === dragNode || pinned.has(n.id)) continue;
-        n.vx += (cx - n.x) * 0.003 * alpha;
-        n.vy += (cy - n.y) * 0.003 * alpha;
+        const isOrphan = !connected.has(n.id);
+        const gravity = isOrphan ? 0.04 : 0.008;
+        n.vx += (cx - n.x) * gravity * alpha;
+        n.vy += (cy - n.y) * gravity * alpha;
         n.vx *= damping;
         n.vy *= damping;
         n.x += n.vx;
@@ -303,14 +333,13 @@ function ForceGraph({
     return new Map(nodesRef.current.map((n) => [n.id, n]));
   }, [renderTick]);
 
-  // --- Node drag (pins node on release) ---
+  // --- Node drag (pins on release) ---
   const handleNodeMouseDown = (id: string) => (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setDragNode(id);
   };
 
-  // Double-click to unpin
   const handleNodeDblClick = (id: string) => (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -335,7 +364,6 @@ function ForceGraph({
     };
 
     const handleUp = () => {
-      // Pin the node so it stays where placed
       pinnedRef.current.add(dragNode);
       setDragNode(null);
     };
@@ -348,7 +376,7 @@ function ForceGraph({
     };
   }, [dragNode, zoom, pan]);
 
-  // --- Pan (background drag) ---
+  // --- Pan ---
   const handleSvgMouseDown = useCallback(
     (e: React.MouseEvent) => {
       if (e.button !== 0) return;
@@ -364,7 +392,7 @@ function ForceGraph({
   );
 
   useEffect(() => {
-    const handleMove = (e: MouseEvent) => {
+    const onMove = (e: MouseEvent) => {
       const pd = panDrag.current;
       if (!pd.active) return;
       setPan({
@@ -372,18 +400,18 @@ function ForceGraph({
         y: pd.panY + (e.clientY - pd.startY),
       });
     };
-    const handleUp = () => {
+    const onUp = () => {
       panDrag.current.active = false;
     };
-    window.addEventListener("mousemove", handleMove);
-    window.addEventListener("mouseup", handleUp);
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
     return () => {
-      window.removeEventListener("mousemove", handleMove);
-      window.removeEventListener("mouseup", handleUp);
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
     };
   }, []);
 
-  // --- Zoom (scroll wheel toward cursor) ---
+  // --- Zoom (smooth, works with both scroll wheel and trackpad pinch) ---
   const handleWheel = useCallback(
     (e: React.WheelEvent) => {
       e.preventDefault();
@@ -392,8 +420,10 @@ function ForceGraph({
       const rect = svg.getBoundingClientRect();
       const mouseX = e.clientX - rect.left;
       const mouseY = e.clientY - rect.top;
-      const factor = e.deltaY < 0 ? 1.12 : 0.89;
-      const newZoom = Math.min(5, Math.max(0.15, zoom * factor));
+      // Smooth proportional zoom — small delta = small change (trackpad friendly)
+      const delta = -e.deltaY * 0.002;
+      const factor = Math.max(0.9, Math.min(1.1, 1 + delta));
+      const newZoom = Math.min(4, Math.max(0.3, zoom * factor));
       setPan({
         x: mouseX - ((mouseX - pan.x) / zoom) * newZoom,
         y: mouseY - ((mouseY - pan.y) / zoom) * newZoom,
@@ -419,13 +449,13 @@ function ForceGraph({
       {/* Zoom toolbar */}
       <div className="absolute top-2 left-2 z-10 flex items-center gap-1.5 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-md px-2 py-1 border border-gray-200 dark:border-gray-700 shadow-sm">
         <button
-          onClick={() => setZoom((z) => Math.min(5, z * 1.25))}
+          onClick={() => setZoom((z) => Math.min(4, z * 1.25))}
           className="px-1.5 py-0.5 text-xs font-bold rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"
         >
           +
         </button>
         <button
-          onClick={() => setZoom((z) => Math.max(0.15, z * 0.8))}
+          onClick={() => setZoom((z) => Math.max(0.3, z * 0.8))}
           className="px-1.5 py-0.5 text-xs font-bold rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"
         >
           -
@@ -437,15 +467,14 @@ function ForceGraph({
           }}
           className="px-1.5 py-0.5 text-xs rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"
         >
-          Fit
+          Reset
         </button>
         <span className="text-[10px] text-gray-400 ml-0.5">
           {Math.round(zoom * 100)}%
         </span>
       </div>
       <div className="absolute bottom-2 right-2 z-10 text-[10px] text-gray-400 dark:text-gray-500">
-        Scroll to zoom · Drag background to pan · Drag nodes to place ·
-        Double-click to unpin
+        Scroll to zoom · Drag to pan · Drag nodes to place · Dbl-click to unpin
       </div>
       <svg
         ref={svgRef}
@@ -459,6 +488,8 @@ function ForceGraph({
             const a = nodeMap.get(e.source);
             const b = nodeMap.get(e.target);
             if (!a || !b) return null;
+            const mx = (a.x + b.x) / 2;
+            const my = (a.y + b.y) / 2;
             return (
               <g key={`edge-${i}`}>
                 <line
@@ -466,13 +497,22 @@ function ForceGraph({
                   y1={a.y}
                   x2={b.x}
                   y2={b.y}
-                  stroke="#94a3b8"
+                  stroke="#64748b"
                   strokeWidth={1.5}
-                  strokeOpacity={0.5}
+                  strokeOpacity={0.4}
+                />
+                <rect
+                  x={mx - 30}
+                  y={my - 14}
+                  width={60}
+                  height={14}
+                  rx={3}
+                  fill="#1e1b2e"
+                  fillOpacity={0.7}
                 />
                 <text
-                  x={(a.x + b.x) / 2}
-                  y={(a.y + b.y) / 2 - 6}
+                  x={mx}
+                  y={my - 4}
                   textAnchor="middle"
                   fontSize={9}
                   fill="#94a3b8"
@@ -485,6 +525,8 @@ function ForceGraph({
           {/* Nodes */}
           {nodesRef.current.map((n) => {
             const isPinned = pinnedRef.current.has(n.id);
+            const r = nodeRadius(n.id);
+            const labelLen = n.name.length * 4.5 + 8;
             return (
               <g
                 key={n.id}
@@ -495,24 +537,29 @@ function ForceGraph({
                 <circle
                   cx={n.x}
                   cy={n.y}
-                  r={18}
+                  r={r}
                   fill={entityTypeColors[n.entity_type] || "#6b7280"}
-                  fillOpacity={0.8}
-                  stroke={
-                    isPinned
-                      ? "#ffffff"
-                      : entityTypeColors[n.entity_type] || "#6b7280"
-                  }
-                  strokeWidth={isPinned ? 3 : 2}
+                  fillOpacity={0.85}
+                  stroke={isPinned ? "#ffffff" : "rgba(255,255,255,0.3)"}
+                  strokeWidth={isPinned ? 3 : 1.5}
+                />
+                {/* Label background */}
+                <rect
+                  x={n.x - labelLen / 2}
+                  y={n.y + r + 4}
+                  width={labelLen}
+                  height={16}
+                  rx={4}
+                  fill="#0f0d1a"
+                  fillOpacity={0.75}
                 />
                 <text
                   x={n.x}
-                  y={n.y + 30}
+                  y={n.y + r + 15}
                   textAnchor="middle"
-                  fontSize={11}
+                  fontSize={12}
                   fontWeight={500}
-                  fill="currentColor"
-                  className="text-gray-700 dark:text-gray-300"
+                  fill="#e5e7eb"
                 >
                   {n.name}
                 </text>
@@ -599,9 +646,10 @@ function MermaidDiagram({ definition }: { definition: string }) {
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
-    setZoom((z) =>
-      Math.min(5, Math.max(0.2, z + (e.deltaY < 0 ? 0.15 : -0.15))),
-    );
+    // Smooth proportional zoom — trackpad pinch friendly
+    const delta = -e.deltaY * 0.002;
+    const factor = Math.max(0.9, Math.min(1.1, 1 + delta));
+    setZoom((z) => Math.min(4, Math.max(0.3, z * factor)));
   }, []);
 
   const handleMouseDown = useCallback(
