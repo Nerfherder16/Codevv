@@ -98,9 +98,9 @@ export function LoginPage() {
             transition={{ duration: 0.6 }}
           >
             <img
-              src="/codevvtransrev.png"
+              src="/codevvrevlogo.png"
               alt=""
-              className="w-12 h-12 opacity-80"
+              className="h-10 w-auto opacity-80"
             />
           </motion.div>
 
