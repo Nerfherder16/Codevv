@@ -222,7 +222,7 @@ export function CanvasEditorPage() {
   const [canvas, setCanvas] = useState<CanvasDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [panelOpen, setPanelOpen] = useState(true);
-  const [hideTools, setHideTools] = useState(true);
+  const [hideTools, setHideTools] = useState(false);
   const editorRef = useRef<Editor | null>(null);
 
   // Add-component form state

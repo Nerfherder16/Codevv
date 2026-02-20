@@ -91,6 +91,26 @@ async def upload_document(
     }
 
 
+@router.get("/{memory_id}")
+async def get_document(
+    project_id: uuid.UUID,
+    memory_id: str,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    await get_project_with_access(project_id, user, db)
+    from app.services.recall import get_memory_by_id
+
+    try:
+        mem = await get_memory_by_id(memory_id)
+    except Exception:
+        raise HTTPException(status_code=404, detail="Document not found")
+    return {
+        "id": mem.get("id"),
+        "content": mem.get("content", mem.get("text", "")),
+    }
+
+
 @router.get("")
 async def list_documents(
     project_id: uuid.UUID,

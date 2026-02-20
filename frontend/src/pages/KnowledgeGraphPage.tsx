@@ -4,7 +4,6 @@ import React, {
   useCallback,
   useRef,
   useMemo,
-  useId,
 } from "react";
 import mermaid from "mermaid";
 import { useParams, useNavigate } from "react-router-dom";
@@ -415,14 +414,18 @@ mermaid.initialize({
 
 function MermaidDiagram({ definition }: { definition: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const uniqueId = useId().replace(/:/g, "-");
-  const [error, setError] = useState<string | null>(null);
+  const renderCount = useRef(0);
 
   useEffect(() => {
-    if (!containerRef.current) return;
-    setError(null);
+    const el = containerRef.current;
+    if (!el) return;
 
-    const id = `mermaid-${uniqueId}`;
+    renderCount.current += 1;
+    const id = `mermaid-diagram-${renderCount.current}`;
+
+    // Remove any previous mermaid-generated elements
+    el.innerHTML = "";
+
     mermaid
       .render(id, definition)
       .then(({ svg }) => {
@@ -430,27 +433,18 @@ function MermaidDiagram({ definition }: { definition: string }) {
           containerRef.current.innerHTML = svg;
         }
       })
-      .catch((err) => {
-        setError(err?.message || "Failed to render diagram");
+      .catch(() => {
+        // Fallback: show raw text if render fails
         if (containerRef.current) {
+          const pre = document.createElement("pre");
+          pre.className =
+            "text-xs font-mono text-gray-400 whitespace-pre-wrap p-2";
+          pre.textContent = definition;
           containerRef.current.innerHTML = "";
+          containerRef.current.appendChild(pre);
         }
       });
-  }, [definition, uniqueId]);
-
-  if (error) {
-    return (
-      <div className="flex-1 min-h-[400px] border border-gray-200 dark:border-gray-700 rounded-lg overflow-auto p-4 bg-gray-50 dark:bg-gray-800/30">
-        <p className="text-sm text-red-400 mb-2">Mermaid render error:</p>
-        <pre className="text-xs font-mono text-gray-400 whitespace-pre-wrap">
-          {error}
-        </pre>
-        <pre className="text-xs font-mono text-gray-500 mt-4 whitespace-pre-wrap">
-          {definition}
-        </pre>
-      </div>
-    );
-  }
+  }, [definition]);
 
   return (
     <div
