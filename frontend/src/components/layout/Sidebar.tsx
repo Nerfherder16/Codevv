@@ -186,33 +186,23 @@ export function Sidebar() {
       >
         <svg width="28" height="44" viewBox="0 0 28 44" className="block">
           {collapsed ? (
-            <>
-              {/* Notch pointing RIGHT → expand */}
-              <path
-                d="M 14 15 L 24 22 L 14 29 Z"
-                className="fill-white group-hover:fill-gray-200 transition-colors"
-              />
-              <path
-                d="M 14 15 L 24 22 L 14 29"
-                fill="none"
-                strokeWidth="1"
-                className="stroke-gray-300 dark:stroke-white/50 transition-colors"
-              />
-            </>
+            <path
+              d="M 14 15 L 24 22 L 14 29"
+              fill="none"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="stroke-white group-hover:stroke-gray-300 transition-colors"
+            />
           ) : (
-            <>
-              {/* Notch pointing LEFT → collapse */}
-              <path
-                d="M 14 15 L 4 22 L 14 29 Z"
-                className="fill-white group-hover:fill-gray-200 transition-colors"
-              />
-              <path
-                d="M 14 15 L 4 22 L 14 29"
-                fill="none"
-                strokeWidth="1"
-                className="stroke-gray-300 dark:stroke-white/50 transition-colors"
-              />
-            </>
+            <path
+              d="M 14 15 L 4 22 L 14 29"
+              fill="none"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="stroke-white group-hover:stroke-gray-300 transition-colors"
+            />
           )}
         </svg>
       </button>
