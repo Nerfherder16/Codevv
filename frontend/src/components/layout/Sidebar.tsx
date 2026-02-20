@@ -105,7 +105,7 @@ export function Sidebar() {
           />
         ) : (
           <img
-            src="/codevvtransparentlogo.webp"
+            src="/codevvrevlogo.png"
             alt="Codevv"
             className="w-full object-contain"
           />
