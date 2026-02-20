@@ -93,7 +93,7 @@ export function Sidebar() {
       {/* Header */}
       <div
         className={cn(
-          "flex items-center justify-center border-b border-gray-200 dark:border-gray-800 shrink-0",
+          "flex items-center justify-center shrink-0",
           collapsed ? "p-2" : "px-3 py-1.5",
         )}
       >
