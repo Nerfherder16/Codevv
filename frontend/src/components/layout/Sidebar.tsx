@@ -99,7 +99,7 @@ export function Sidebar() {
       >
         {collapsed ? (
           <img
-            src="/codevvtrans.png"
+            src="/codevvtransrev.png"
             alt="Codevv"
             className="w-full object-contain"
           />
@@ -107,7 +107,7 @@ export function Sidebar() {
           <img
             src="/codevvrevlogo.png"
             alt="Codevv"
-            className="w-full object-contain"
+            className="w-full max-h-10 object-contain"
           />
         )}
       </div>
