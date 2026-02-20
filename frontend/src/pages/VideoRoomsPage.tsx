@@ -1,16 +1,6 @@
-/* eslint-disable @typescript-eslint/no-require-imports */
-declare const require: (module: string) => Record<string, unknown>;
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import {
-  Plus,
-  ArrowLeft,
-  Video,
-  Phone,
-  PhoneOff,
-  Trash2,
-  Circle,
-} from "lucide-react";
+import { Plus, ArrowLeft, Video, Phone, Trash2, Circle } from "lucide-react";
 import { api } from "../lib/api";
 import type { VideoRoom, RoomToken } from "../types";
 import { useToast } from "../contexts/ToastContext";
@@ -22,29 +12,8 @@ import { Modal } from "../components/common/Modal";
 import { relativeTime } from "../lib/utils";
 import { Input } from "../components/common/Input";
 import { EmptyState, VideoIllustration } from "../components/common/EmptyState";
-
-/* ---------- LiveKit video component ---------- */
-
-let LiveKitRoom: React.ComponentType<{
-  token: string;
-  serverUrl: string;
-  connect: boolean;
-  video: boolean;
-  audio: boolean;
-  children?: React.ReactNode;
-}> | null = null;
-
-let VideoConference: React.ComponentType | null = null;
-
-try {
-  // Dynamic import attempt - will be available if @livekit/components-react is installed
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const lk = require("@livekit/components-react");
-  LiveKitRoom = lk.LiveKitRoom as typeof LiveKitRoom;
-  VideoConference = lk.VideoConference as typeof VideoConference;
-} catch {
-  // LiveKit components not installed - we'll show a fallback
-}
+import { LiveKitRoom, VideoConference } from "@livekit/components-react";
+import "@livekit/components-styles";
 
 function VideoRoomView({
   token,
@@ -55,57 +24,19 @@ function VideoRoomView({
   serverUrl: string;
   onLeave: () => void;
 }) {
-  if (LiveKitRoom && VideoConference) {
-    return (
-      <div className="flex flex-col h-[70vh]">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Video Room
-          </h3>
-          <Button variant="danger" size="sm" onClick={onLeave}>
-            <PhoneOff className="w-4 h-4" />
-            Leave
-          </Button>
-        </div>
-        <div className="flex-1 rounded-lg overflow-hidden bg-black">
-          <LiveKitRoom
-            token={token}
-            serverUrl={serverUrl}
-            connect={true}
-            video={true}
-            audio={true}
-          >
-            <VideoConference />
-          </LiveKitRoom>
-        </div>
-      </div>
-    );
-  }
-
-  // Fallback when LiveKit is not installed
   return (
-    <div className="flex flex-col h-[70vh]">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Video Room
-        </h3>
-        <Button variant="danger" size="sm" onClick={onLeave}>
-          <PhoneOff className="w-4 h-4" />
-          Leave
-        </Button>
-      </div>
-      <div className="flex-1 rounded-lg bg-gray-900 flex items-center justify-center">
-        <div className="text-center text-gray-400">
-          <Video className="w-16 h-16 mx-auto mb-4 opacity-40" />
-          <p className="text-lg font-medium">Connected to Room</p>
-          <p className="text-sm mt-1">
-            Token acquired. Install @livekit/components-react for full video UI.
-          </p>
-          <p className="text-xs mt-3 font-mono bg-gray-800 rounded px-3 py-1.5 inline-block">
-            Server: {serverUrl}
-          </p>
-        </div>
-      </div>
+    <div className="h-[calc(100vh-4rem)]" data-lk-theme="default">
+      <LiveKitRoom
+        token={token}
+        serverUrl={serverUrl}
+        connect={true}
+        video={true}
+        audio={true}
+        onDisconnected={onLeave}
+        style={{ height: "100%" }}
+      >
+        <VideoConference />
+      </LiveKitRoom>
     </div>
   );
 }

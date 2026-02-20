@@ -46,7 +46,9 @@ async def list_rooms(
 ):
     await get_project_with_access(project_id, user, db)
     result = await db.execute(
-        select(VideoRoom).where(VideoRoom.project_id == project_id, VideoRoom.is_active == True)
+        select(VideoRoom).where(
+            VideoRoom.project_id == project_id, VideoRoom.is_active.is_(True)
+        )
     )
     return [RoomResponse.model_validate(r) for r in result.scalars().all()]
 
@@ -60,7 +62,9 @@ async def get_room_token(
 ):
     await get_project_with_access(project_id, user, db)
     result = await db.execute(
-        select(VideoRoom).where(VideoRoom.id == room_id, VideoRoom.project_id == project_id)
+        select(VideoRoom).where(
+            VideoRoom.id == room_id, VideoRoom.project_id == project_id
+        )
     )
     room = result.scalar_one_or_none()
     if not room:
@@ -80,10 +84,11 @@ async def get_room_token(
         )
     )
 
+    public_url = settings.livekit_public_url or settings.livekit_url
     return RoomTokenResponse(
         token=token.to_jwt(),
         room_name=room.livekit_room_name,
-        url=settings.livekit_url.replace("ws://", "wss://").replace("livekit:", "localhost:"),
+        url=public_url,
     )
 
 
@@ -96,7 +101,9 @@ async def close_room(
 ):
     await get_project_with_access(project_id, user, db, min_role=ProjectRole.editor)
     result = await db.execute(
-        select(VideoRoom).where(VideoRoom.id == room_id, VideoRoom.project_id == project_id)
+        select(VideoRoom).where(
+            VideoRoom.id == room_id, VideoRoom.project_id == project_id
+        )
     )
     room = result.scalar_one_or_none()
     if not room:

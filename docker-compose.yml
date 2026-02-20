@@ -8,7 +8,7 @@ services:
       POSTGRES_USER: codevv
       POSTGRES_PASSWORD: codevv_dev
     ports:
-      - "5432:5432"
+      - "5434:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -38,7 +38,7 @@ services:
       - "7882:7882/udp"
     environment:
       LIVEKIT_KEYS: "devkey: secret"
-    command: --dev --bind 0.0.0.0
+    command: --dev --bind 0.0.0.0 --node-ip 192.168.50.19
 
   yjs-server:
     build: ./yjs-server
@@ -52,12 +52,13 @@ services:
   backend:
     build: ./backend
     ports:
-      - "8000:8000"
+      - "8002:8000"
     environment:
       DATABASE_URL: "postgresql+asyncpg://codevv:codevv_dev@postgres:5432/codevv"
       REDIS_URL: "redis://redis:6379/0"
       OLLAMA_URL: "http://192.168.50.62:11434"
       LIVEKIT_URL: "ws://livekit:7880"
+      LIVEKIT_PUBLIC_URL: "wss://codevv.streamy.tube"
       LIVEKIT_API_KEY: "devkey"
       LIVEKIT_API_SECRET: "secret"
       YJS_URL: "ws://yjs-server:1234"

@@ -21,6 +21,7 @@ class Settings(BaseSettings):
 
     # LiveKit
     livekit_url: str = "ws://localhost:7880"
+    livekit_public_url: str = ""  # Browser-reachable URL; falls back to livekit_url
     livekit_api_key: str = "devkey"
     livekit_api_secret: str = "secret"
 
