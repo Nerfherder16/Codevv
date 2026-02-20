@@ -92,13 +92,13 @@ const entityTypeBadge: Record<string, string> = {
 
 function generateMermaid(nodes: GraphNode[], edges: GraphEdge[]): string {
   if (nodes.length === 0) return "graph TD\n  empty[No data - click Show All]";
-  const lines = ["graph TD"];
+  const lines = ["graph LR"];
   const nodeIdMap = new Map<string, string>();
+  const styleLines: string[] = [];
 
   nodes.forEach((n, i) => {
     const sid = `N${i}`;
     nodeIdMap.set(n.id, sid);
-    // Sanitize name for mermaid (remove special chars that break syntax)
     const safeName = n.name.replace(/[[\](){}|#&;`"]/g, " ").trim();
     let shape: string;
     switch (n.entity_type) {
@@ -118,6 +118,11 @@ function generateMermaid(nodes: GraphNode[], edges: GraphEdge[]): string {
         shape = `[${safeName}]`;
     }
     lines.push(`  ${sid}${shape}`);
+    // Color code by entity type
+    const color = entityTypeColors[n.entity_type] || "#6b7280";
+    styleLines.push(
+      `  style ${sid} fill:${color},stroke:${color},color:#fff,stroke-width:2px`,
+    );
   });
 
   edges.forEach((e) => {
@@ -127,6 +132,9 @@ function generateMermaid(nodes: GraphNode[], edges: GraphEdge[]): string {
       lines.push(`  ${src} -->|${e.relation_type}| ${tgt}`);
     }
   });
+
+  // Append style directives
+  lines.push(...styleLines);
 
   return lines.join("\n");
 }
@@ -620,11 +628,30 @@ function MermaidDiagram({ definition }: { definition: string }) {
       .then(({ svg }) => {
         if (svgRef.current) {
           svgRef.current.innerHTML = svg;
-          // Remove max-width so zoom works properly
           const svgEl = svgRef.current.querySelector("svg");
           if (svgEl) {
             svgEl.style.maxWidth = "none";
             svgEl.removeAttribute("height");
+
+            // Auto-fit: measure SVG and viewport, scale to fit
+            requestAnimationFrame(() => {
+              const viewport = viewportRef.current;
+              if (!viewport || !svgEl) return;
+              const vw = viewport.clientWidth;
+              const vh = viewport.clientHeight;
+              const svgRect = svgEl.getBoundingClientRect();
+              const sw = svgRect.width;
+              const sh = svgRect.height;
+              if (sw > 0 && sh > 0 && vw > 0 && vh > 0) {
+                const fitZoom = Math.min(vw / sw, vh / sh) * 0.9; // 90% to add padding
+                const clampedZoom = Math.min(4, Math.max(0.3, fitZoom));
+                // Center the diagram in the viewport
+                const cx = (vw - sw * clampedZoom) / 2;
+                const cy = (vh - sh * clampedZoom) / 2;
+                setZoom(clampedZoom);
+                setPan({ x: Math.max(0, cx), y: Math.max(0, cy) });
+              }
+            });
           }
         }
       })
@@ -639,7 +666,7 @@ function MermaidDiagram({ definition }: { definition: string }) {
         }
       });
 
-    // Reset pan/zoom when definition changes
+    // Reset pan/zoom when definition changes (auto-fit will override)
     setZoom(1);
     setPan({ x: 0, y: 0 });
   }, [definition]);
@@ -1207,16 +1234,16 @@ export function KnowledgeGraphPage() {
             </Button>
 
             {/* View mode toggle */}
-            <div className="flex items-center gap-0 ml-3">
+            <div className="flex items-center ml-3">
               <button
                 onClick={() => setViewMode("graph")}
-                className={`px-3 py-1 text-xs font-medium rounded-l-md border ${viewMode === "graph" ? "bg-teal/10 text-teal border-teal" : "text-gray-400 border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+                className={`px-3 py-1 text-xs font-medium rounded-l-md border ${viewMode === "graph" ? "bg-teal/10 text-teal border-teal relative z-10" : "text-gray-400 border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
               >
                 Graph
               </button>
               <button
                 onClick={() => setViewMode("mermaid")}
-                className={`px-3 py-1 text-xs font-medium rounded-r-md border-t border-r border-b ${viewMode === "mermaid" ? "bg-teal/10 text-teal border-teal" : "text-gray-400 border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+                className={`px-3 py-1 text-xs font-medium rounded-r-md border -ml-px ${viewMode === "mermaid" ? "bg-teal/10 text-teal border-teal relative z-10" : "text-gray-400 border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
               >
                 Mermaid
               </button>
