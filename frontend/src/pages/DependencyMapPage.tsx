@@ -457,9 +457,9 @@ export function DependencyMapPage() {
       />
 
       {/* Stats bar */}
-      <div className="flex gap-3 mb-4">
+      <div className="flex flex-wrap gap-3 mb-4">
         {statItems.map((s) => (
-          <Card key={s.label} className="flex-1 p-3">
+          <Card key={s.label} className="flex-1 min-w-[140px] p-3">
             <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">
               {s.label}
             </p>
@@ -484,7 +484,7 @@ export function DependencyMapPage() {
         </div>
 
         {selectedNode && (
-          <div className="w-72 shrink-0 flex flex-col gap-3">
+          <div className="hidden md:flex w-72 shrink-0 flex-col gap-3">
             <Card className="p-4">
               <div className="flex items-start justify-between mb-3">
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
@@ -535,7 +535,7 @@ export function DependencyMapPage() {
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 mt-2">
+      <div className="flex flex-wrap items-center gap-4 mt-2">
         {Object.keys(TYPE_COLORS).map((t) => (
           <div
             key={t}

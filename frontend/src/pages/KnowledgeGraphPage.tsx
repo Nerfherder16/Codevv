@@ -1086,7 +1086,7 @@ export function KnowledgeGraphPage() {
 
       <div className="flex-1 flex gap-4 min-h-0">
         {/* Left panel: entities */}
-        <div className="w-80 shrink-0 flex flex-col gap-4">
+        <div className="hidden md:flex w-80 shrink-0 flex-col gap-4">
           {/* Search */}
           <form onSubmit={handleSearch} className="flex gap-2">
             <div className="relative flex-1">

@@ -461,7 +461,7 @@ export function CanvasEditorPage() {
 
         {/* Side panel */}
         {panelOpen && (
-          <div className="w-80 border-l border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex flex-col overflow-hidden shrink-0">
+          <div className="hidden lg:flex w-80 border-l border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex-col overflow-hidden shrink-0">
             {/* Add component form */}
             <div className="p-4 border-b border-gray-200 dark:border-gray-800">
               <h2 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">

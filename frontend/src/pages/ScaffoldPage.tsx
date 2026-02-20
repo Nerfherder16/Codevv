@@ -561,9 +561,9 @@ export function ScaffoldPage() {
         className="max-w-5xl"
       >
         {previewJob?.generated_files ? (
-          <div className="flex gap-4 h-[60vh]">
+          <div className="flex gap-4 h-[50vh] sm:h-[60vh]">
             {/* File tree sidebar */}
-            <div className="w-56 shrink-0 border-r border-gray-200 dark:border-gray-700 pr-3 overflow-y-auto">
+            <div className="hidden sm:block w-56 shrink-0 border-r border-gray-200 dark:border-gray-700 pr-3 overflow-y-auto">
               <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">
                 Files
               </p>

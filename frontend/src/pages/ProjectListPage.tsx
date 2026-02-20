@@ -101,12 +101,12 @@ export function ProjectListPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* ── Header bar ─────────────────────────────────────── */}
       <header className="sticky top-0 z-50 border-b border-gray-200/80 dark:border-white/[0.04] bg-white/80 dark:bg-gray-950/80 backdrop-blur-xl">
-        <div className="max-w-6xl mx-auto px-6 h-20 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between">
           {/* Logo */}
           <img
             src="/codevvrevlogo.png"
             alt="Codevv"
-            className="h-16 w-auto mt-4"
+            className="h-10 sm:h-16 w-auto mt-2 sm:mt-4"
           />
 
           {/* Right controls */}
@@ -148,10 +148,10 @@ export function ProjectListPage() {
       </header>
 
       {/* ── Main content ───────────────────────────────────── */}
-      <main className="max-w-6xl mx-auto px-6 py-12">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
         {/* Hero */}
         <div className="mb-10 animate-in">
-          <h1 className="text-4xl font-light tracking-tight text-gray-900 dark:text-gray-100">
+          <h1 className="text-2xl sm:text-4xl font-light tracking-tight text-gray-900 dark:text-gray-100">
             {user ? (
               <>
                 Welcome back,{" "}
@@ -170,7 +170,7 @@ export function ProjectListPage() {
 
         {/* Stats row */}
         {projects.length > 0 && (
-          <div className="grid grid-cols-3 gap-4 mb-10 animate-in">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-10 animate-in">
             <div className="rounded-xl border border-gray-200/80 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-lg bg-cyan-500/10 flex items-center justify-center">

@@ -25,7 +25,7 @@ function VideoRoomView({
   onLeave: () => void;
 }) {
   return (
-    <div className="h-[calc(100vh-4rem)]" data-lk-theme="default">
+    <div className="h-[calc(100dvh-4rem)]" data-lk-theme="default">
       <LiveKitRoom
         token={token}
         serverUrl={serverUrl}

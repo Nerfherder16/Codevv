@@ -8,8 +8,11 @@ export function TopBar() {
   const { theme, toggle } = useTheme();
 
   return (
-    <header className="h-14 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-6 bg-white dark:bg-gray-900/50">
-      <div />
+    <header className="h-14 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-3 sm:px-6 bg-white dark:bg-gray-900/50">
+      <div className="sm:hidden">
+        <img src="/codevvtransrev.png" alt="Codevv" className="h-7 w-auto" />
+      </div>
+      <div className="hidden sm:block" />
       <div className="flex items-center gap-3">
         <button
           onClick={toggle}
