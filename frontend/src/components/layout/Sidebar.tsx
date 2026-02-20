@@ -91,18 +91,18 @@ export function Sidebar() {
       )}
     >
       {/* Header */}
-      <div className="h-14 flex items-center justify-center border-b border-gray-200 dark:border-gray-800 px-2 shrink-0">
+      <div className="flex items-center justify-center border-b border-gray-200 dark:border-gray-800 px-2 py-2 shrink-0">
         {collapsed ? (
           <img
             src="/codevvtrans.png"
             alt="Codevv"
-            className="max-h-8 w-auto object-contain"
+            className="h-12 w-auto object-contain"
           />
         ) : (
           <img
             src="/codevvtransparentlogo.webp"
             alt="Codevv"
-            className="max-h-10 w-auto object-contain"
+            className="h-12 w-auto object-contain"
           />
         )}
       </div>
