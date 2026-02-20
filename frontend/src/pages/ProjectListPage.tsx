@@ -101,13 +101,9 @@ export function ProjectListPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* ── Header bar ─────────────────────────────────────── */}
       <header className="sticky top-0 z-50 border-b border-gray-200/80 dark:border-white/[0.04] bg-white/80 dark:bg-gray-950/80 backdrop-blur-xl">
-        <div className="max-w-6xl mx-auto px-6 h-28 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           {/* Logo */}
-          <img
-            src="/codevvtransparentlogo.webp"
-            alt="Codevv"
-            className="h-56 -my-14"
-          />
+          <img src="/codevvrevlogo.png" alt="Codevv" className="h-10 w-auto" />
 
           {/* Right controls */}
           <div className="flex items-center gap-1.5">
@@ -300,21 +296,6 @@ export function ProjectListPage() {
           </div>
         )}
       </main>
-
-      {/* ── Footer ─────────────────────────────────────────── */}
-      <footer className="max-w-6xl mx-auto px-6 py-8 border-t border-gray-200/50 dark:border-white/[0.03]">
-        <div className="flex items-center justify-between text-xs text-gray-400 dark:text-gray-600">
-          <div className="flex items-center gap-2">
-            <img
-              src="/codevvtransparentlogo.webp"
-              alt=""
-              className="w-4 h-4 opacity-50"
-            />
-            <span>Codevv</span>
-          </div>
-          <span>AI-assisted software design</span>
-        </div>
-      </footer>
 
       {/* ── New Project Modal ──────────────────────────────── */}
       <Modal open={modalOpen} onClose={closeModal} title="New Project">
