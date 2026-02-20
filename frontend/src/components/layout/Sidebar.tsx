@@ -95,11 +95,11 @@ export function Sidebar() {
       >
         <div
           className="absolute right-0 top-0 w-px bg-gray-200 dark:bg-gray-800"
-          style={{ height: "calc(50% - 7px)" }}
+          style={{ height: "calc(50% - 9px)" }}
         />
         <div
           className="absolute right-0 bottom-0 w-px bg-gray-200 dark:bg-gray-800"
-          style={{ height: "calc(50% - 7px)" }}
+          style={{ height: "calc(50% - 9px)" }}
         />
         <svg
           width="28"
@@ -110,19 +110,21 @@ export function Sidebar() {
         >
           {collapsed ? (
             <path
-              d="M 14 15 L 24 22 L 14 29 Z"
+              d="M 14 13 L 26 22 L 14 31"
+              fill="none"
               strokeWidth="1.5"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="fill-gray-100 dark:fill-gray-900 stroke-gray-200 dark:stroke-gray-800 group-hover:stroke-white transition-colors"
+              className="stroke-gray-200 dark:stroke-gray-800 group-hover:stroke-white transition-colors"
             />
           ) : (
             <path
-              d="M 14 15 L 4 22 L 14 29 Z"
+              d="M 14 13 L 2 22 L 14 31"
+              fill="none"
               strokeWidth="1.5"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="fill-gray-50 dark:fill-gray-950 stroke-gray-200 dark:stroke-gray-800 group-hover:stroke-white transition-colors"
+              className="stroke-gray-200 dark:stroke-gray-800 group-hover:stroke-white transition-colors"
             />
           )}
         </svg>
