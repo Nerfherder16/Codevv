@@ -8,3 +8,5 @@ build/
 .vite/
 .tsbuildinfo
 .ui/
+.claude/
+Architecture.pdf
