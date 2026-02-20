@@ -88,15 +88,47 @@ export function Sidebar() {
         collapsed ? "w-16" : "w-60",
       )}
     >
-      {/* Right border — split into two segments with gap for notch */}
-      <div
-        className="absolute right-0 top-0 w-px bg-gray-200 dark:bg-gray-800"
-        style={{ height: "calc(50% - 7px)" }}
-      />
-      <div
-        className="absolute right-0 bottom-0 w-px bg-gray-200 dark:bg-gray-800"
-        style={{ height: "calc(50% - 7px)" }}
-      />
+      {/* Right edge — full-height toggle with split border + notch */}
+      <button
+        onClick={toggleCollapse}
+        className="absolute right-0 top-0 bottom-0 w-3 z-20 flex items-center cursor-pointer group"
+      >
+        <div
+          className="absolute right-0 top-0 w-px bg-gray-200 dark:bg-gray-800"
+          style={{ height: "calc(50% - 7px)" }}
+        />
+        <div
+          className="absolute right-0 bottom-0 w-px bg-gray-200 dark:bg-gray-800"
+          style={{ height: "calc(50% - 7px)" }}
+        />
+        <svg
+          width="28"
+          height="44"
+          viewBox="0 0 28 44"
+          className="absolute top-1/2 -translate-y-1/2 block"
+          style={{ right: "-14px" }}
+        >
+          {collapsed ? (
+            <path
+              d="M 14 15 L 24 22 L 14 29"
+              fill="none"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="stroke-gray-200 dark:stroke-gray-800 group-hover:stroke-white transition-colors"
+            />
+          ) : (
+            <path
+              d="M 14 15 L 4 22 L 14 29"
+              fill="none"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="stroke-gray-200 dark:stroke-gray-800 group-hover:stroke-white transition-colors"
+            />
+          )}
+        </svg>
+      </button>
 
       {/* Header */}
       <div
@@ -187,35 +219,6 @@ export function Sidebar() {
           </NavLink>
         </div>
       </nav>
-
-      {/* Collapse toggle — directional notch on right edge */}
-      <button
-        onClick={toggleCollapse}
-        className="absolute top-1/2 -translate-y-1/2 z-20 flex items-center group cursor-pointer"
-        style={{ right: "-14px" }}
-      >
-        <svg width="28" height="44" viewBox="0 0 28 44" className="block">
-          {collapsed ? (
-            <path
-              d="M 14 15 L 24 22 L 14 29"
-              fill="none"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="stroke-gray-200 dark:stroke-gray-800 group-hover:stroke-white transition-colors"
-            />
-          ) : (
-            <path
-              d="M 14 15 L 4 22 L 14 29"
-              fill="none"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="stroke-gray-200 dark:stroke-gray-800 group-hover:stroke-white transition-colors"
-            />
-          )}
-        </svg>
-      </button>
     </aside>
   );
 }
