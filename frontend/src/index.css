@@ -190,16 +190,6 @@ body {
 /* tldraw overrides */
 .tl-container {
   border-radius: 8px;
-  /* iOS Safari: ensure tldraw fills its container */
-  width: 100% !important;
-  height: 100% !important;
-}
-
-/* iOS: prevent rubber-band scrolling on canvas pages */
-.tl-container,
-.tl-container * {
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
 }
 
 /* Safe area for bottom nav (iPhone notch) */

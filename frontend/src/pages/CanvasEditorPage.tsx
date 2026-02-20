@@ -373,10 +373,7 @@ export function CanvasEditorPage() {
   }
 
   return (
-    <div
-      className="fixed inset-0 flex flex-col bg-white dark:bg-gray-950"
-      style={{ height: "100dvh" }}
-    >
+    <div className="fixed inset-0 flex flex-col bg-white dark:bg-gray-950">
       {/* Top bar */}
       <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 z-10 shrink-0">
         <div className="flex items-center gap-3">
