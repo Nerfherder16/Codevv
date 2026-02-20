@@ -178,25 +178,42 @@ export function Sidebar() {
         </div>
       </nav>
 
-      {/* Collapse toggle — inward notch on right edge */}
+      {/* Collapse toggle — directional notch on right edge */}
       <button
         onClick={toggleCollapse}
         className="absolute top-1/2 -translate-y-1/2 z-20 flex items-center group cursor-pointer"
-        style={{ right: "-6px" }}
+        style={{ right: "-14px" }}
       >
-        <svg width="20" height="44" viewBox="0 0 20 44" className="block">
-          {/* Notch fill — lighter to create highlighted indent */}
-          <path
-            d="M 14 15 L 4 22 L 14 29 Z"
-            className="fill-white dark:fill-white/[0.08] group-hover:fill-gray-100 dark:group-hover:fill-white/[0.15] transition-colors"
-          />
-          {/* Notch border strokes */}
-          <path
-            d="M 14 15 L 4 22 L 14 29"
-            fill="none"
-            strokeWidth="1"
-            className="stroke-gray-300 dark:stroke-gray-600 group-hover:stroke-gray-400 dark:group-hover:stroke-gray-400 transition-colors"
-          />
+        <svg width="28" height="44" viewBox="0 0 28 44" className="block">
+          {collapsed ? (
+            <>
+              {/* Notch pointing RIGHT → expand */}
+              <path
+                d="M 14 15 L 24 22 L 14 29 Z"
+                className="fill-white group-hover:fill-gray-200 transition-colors"
+              />
+              <path
+                d="M 14 15 L 24 22 L 14 29"
+                fill="none"
+                strokeWidth="1"
+                className="stroke-gray-300 dark:stroke-white/50 transition-colors"
+              />
+            </>
+          ) : (
+            <>
+              {/* Notch pointing LEFT → collapse */}
+              <path
+                d="M 14 15 L 4 22 L 14 29 Z"
+                className="fill-white group-hover:fill-gray-200 transition-colors"
+              />
+              <path
+                d="M 14 15 L 4 22 L 14 29"
+                fill="none"
+                strokeWidth="1"
+                className="stroke-gray-300 dark:stroke-white/50 transition-colors"
+              />
+            </>
+          )}
         </svg>
       </button>
     </aside>
