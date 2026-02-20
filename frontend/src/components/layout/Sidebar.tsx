@@ -91,7 +91,7 @@ export function Sidebar() {
       )}
     >
       {/* Header */}
-      <div className="flex items-center justify-center border-b border-gray-200 dark:border-gray-800 px-2 py-5">
+      <div className="flex items-center justify-center border-b border-gray-200 dark:border-gray-800 px-2 py-1.5">
         {collapsed ? (
           <img
             src="/codevvtrans.png"
