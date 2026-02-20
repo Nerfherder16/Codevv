@@ -91,18 +91,23 @@ export function Sidebar() {
       )}
     >
       {/* Header */}
-      <div className="flex items-center justify-center border-b border-gray-200 dark:border-gray-800 px-2 py-2 shrink-0">
+      <div
+        className={cn(
+          "flex items-center justify-center border-b border-gray-200 dark:border-gray-800 shrink-0",
+          collapsed ? "p-2" : "px-3 py-1.5",
+        )}
+      >
         {collapsed ? (
           <img
             src="/codevvtrans.png"
             alt="Codevv"
-            className="h-12 w-auto object-contain"
+            className="w-full object-contain"
           />
         ) : (
           <img
             src="/codevvtransparentlogo.webp"
             alt="Codevv"
-            className="h-12 w-auto object-contain"
+            className="w-full object-contain"
           />
         )}
       </div>
