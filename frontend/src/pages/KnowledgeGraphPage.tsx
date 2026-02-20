@@ -161,6 +161,7 @@ function ForceGraph({
   height: number;
 }) {
   const nodesRef = useRef<ForceNode[]>([]);
+  const pinnedRef = useRef<Set<string>>(new Set());
   const [renderTick, setRenderTick] = useState(0);
   const frameRef = useRef<number>(0);
   const [dragNode, setDragNode] = useState<string | null>(null);
@@ -177,14 +178,12 @@ function ForceGraph({
     panY: number;
   }>({ active: false, startX: 0, startY: 0, panX: 0, panY: 0 });
 
-  // Use a generous virtual canvas so nodes have room to spread
-  const VIRTUAL_W = 1400;
-  const VIRTUAL_H = 900;
-
-  // Initialize nodes spread across the virtual canvas
+  // Initialize nodes centered in the container's coordinate space
   useEffect(() => {
     const existing = new Map(nodesRef.current.map((n) => [n.id, n]));
-    const spread = Math.min(VIRTUAL_W, VIRTUAL_H) * 0.4;
+    const spread = Math.min(width, height) * 0.35;
+    const cx = width / 2;
+    const cy = height / 2;
     nodesRef.current = rawNodes.map((n) => {
       const prev = existing.get(n.id);
       if (prev) return { ...prev, name: n.name, entity_type: n.entity_type };
@@ -192,27 +191,19 @@ function ForceGraph({
         id: n.id,
         name: n.name,
         entity_type: n.entity_type,
-        x: VIRTUAL_W / 2 + (Math.random() - 0.5) * spread * 2,
-        y: VIRTUAL_H / 2 + (Math.random() - 0.5) * spread * 2,
+        x: cx + (Math.random() - 0.5) * spread * 2,
+        y: cy + (Math.random() - 0.5) * spread * 2,
         vx: 0,
         vy: 0,
       };
     });
-    // Auto-fit: scale so the virtual canvas fits the container
-    if (width > 0 && height > 0) {
-      const scaleX = width / VIRTUAL_W;
-      const scaleY = height / VIRTUAL_H;
-      const fitZoom = Math.min(scaleX, scaleY, 1);
-      setZoom(fitZoom);
-      setPan({
-        x: (width - VIRTUAL_W * fitZoom) / 2,
-        y: (height - VIRTUAL_H * fitZoom) / 2,
-      });
-    }
+    pinnedRef.current.clear();
+    setZoom(1);
+    setPan({ x: 0, y: 0 });
     setRenderTick((t) => t + 1);
   }, [rawNodes, width, height]);
 
-  // Force simulation loop — runs on virtual canvas coordinates
+  // Force simulation — no hard clamping, center gravity keeps nodes in view
   useEffect(() => {
     let running = true;
     let alpha = 1;
@@ -221,6 +212,7 @@ function ForceGraph({
       if (!running) return;
 
       const nodes = nodesRef.current;
+      const pinned = pinnedRef.current;
       const damping = 0.88;
       alpha *= 0.993;
 
@@ -231,8 +223,8 @@ function ForceGraph({
 
       const nodeCount = nodes.length;
       const densityFactor = Math.max(1, nodeCount / 8);
-      const repulsionStrength = 800 * densityFactor;
-      const edgeTargetLen = 180;
+      const repulsionStrength = 600 * densityFactor;
+      const edgeTargetLen = 160;
 
       // Repulsion between all nodes
       for (let i = 0; i < nodes.length; i++) {
@@ -246,11 +238,13 @@ function ForceGraph({
           dx *= force;
           dy *= force;
 
-          if (a.id !== dragNode) {
+          const aFixed = a.id === dragNode || pinned.has(a.id);
+          const bFixed = b.id === dragNode || pinned.has(b.id);
+          if (!aFixed) {
             a.vx -= dx;
             a.vy -= dy;
           }
-          if (b.id !== dragNode) {
+          if (!bFixed) {
             b.vx += dx;
             b.vy += dy;
           }
@@ -268,30 +262,29 @@ function ForceGraph({
         const dist = Math.sqrt(dx * dx + dy * dy) || 1;
         const force = (dist - edgeTargetLen) * 0.025 * alpha;
 
-        if (a.id !== dragNode) {
+        const aFixed = a.id === dragNode || pinned.has(a.id);
+        const bFixed = b.id === dragNode || pinned.has(b.id);
+        if (!aFixed) {
           a.vx += (dx / dist) * force;
           a.vy += (dy / dist) * force;
         }
-        if (b.id !== dragNode) {
+        if (!bFixed) {
           b.vx -= (dx / dist) * force;
           b.vy -= (dy / dist) * force;
         }
       }
 
-      // Center gravity
-      const cx = VIRTUAL_W / 2;
-      const cy = VIRTUAL_H / 2;
+      // Center gravity — no hard clamp, just gentle pull toward center
+      const cx = width / 2;
+      const cy = height / 2;
       for (const n of nodes) {
-        if (n.id === dragNode) continue;
-        n.vx += (cx - n.x) * 0.002 * alpha;
-        n.vy += (cy - n.y) * 0.002 * alpha;
+        if (n.id === dragNode || pinned.has(n.id)) continue;
+        n.vx += (cx - n.x) * 0.003 * alpha;
+        n.vy += (cy - n.y) * 0.003 * alpha;
         n.vx *= damping;
         n.vy *= damping;
         n.x += n.vx;
         n.y += n.vy;
-        // Soft clamp to virtual bounds
-        n.x = Math.max(40, Math.min(VIRTUAL_W - 40, n.x));
-        n.y = Math.max(40, Math.min(VIRTUAL_H - 40, n.y));
       }
 
       setRenderTick((t) => t + 1);
@@ -303,18 +296,25 @@ function ForceGraph({
       running = false;
       cancelAnimationFrame(frameRef.current);
     };
-  }, [edges, dragNode]);
+  }, [edges, width, height, dragNode]);
 
   const nodeMap = useMemo(() => {
     void renderTick;
     return new Map(nodesRef.current.map((n) => [n.id, n]));
   }, [renderTick]);
 
-  // --- Node drag ---
+  // --- Node drag (pins node on release) ---
   const handleNodeMouseDown = (id: string) => (e: React.MouseEvent) => {
     e.preventDefault();
-    e.stopPropagation(); // prevent pan
+    e.stopPropagation();
     setDragNode(id);
+  };
+
+  // Double-click to unpin
+  const handleNodeDblClick = (id: string) => (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    pinnedRef.current.delete(id);
   };
 
   useEffect(() => {
@@ -326,7 +326,6 @@ function ForceGraph({
       const rect = svg.getBoundingClientRect();
       const node = nodesRef.current.find((n) => n.id === dragNode);
       if (node) {
-        // Convert screen coords to virtual canvas coords
         node.x = (e.clientX - rect.left - pan.x) / zoom;
         node.y = (e.clientY - rect.top - pan.y) / zoom;
         node.vx = 0;
@@ -335,7 +334,11 @@ function ForceGraph({
       }
     };
 
-    const handleUp = () => setDragNode(null);
+    const handleUp = () => {
+      // Pin the node so it stays where placed
+      pinnedRef.current.add(dragNode);
+      setDragNode(null);
+    };
 
     window.addEventListener("mousemove", handleMove);
     window.addEventListener("mouseup", handleUp);
@@ -380,7 +383,7 @@ function ForceGraph({
     };
   }, []);
 
-  // --- Zoom (scroll wheel) ---
+  // --- Zoom (scroll wheel toward cursor) ---
   const handleWheel = useCallback(
     (e: React.WheelEvent) => {
       e.preventDefault();
@@ -391,7 +394,6 @@ function ForceGraph({
       const mouseY = e.clientY - rect.top;
       const factor = e.deltaY < 0 ? 1.12 : 0.89;
       const newZoom = Math.min(5, Math.max(0.15, zoom * factor));
-      // Zoom toward cursor position
       setPan({
         x: mouseX - ((mouseX - pan.x) / zoom) * newZoom,
         y: mouseY - ((mouseY - pan.y) / zoom) * newZoom,
@@ -403,7 +405,7 @@ function ForceGraph({
 
   if (nodesRef.current.length === 0) {
     return (
-      <div className="flex items-center justify-center h-full text-gray-400 dark:text-gray-500 text-sm">
+      <div className="absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-500 text-sm">
         <div className="text-center">
           <Network className="w-10 h-10 mx-auto mb-2 opacity-50" />
           <p>Select a start node and traverse to see the graph</p>
@@ -413,7 +415,7 @@ function ForceGraph({
   }
 
   return (
-    <div className="relative w-full h-full">
+    <>
       {/* Zoom toolbar */}
       <div className="absolute top-2 left-2 z-10 flex items-center gap-1.5 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-md px-2 py-1 border border-gray-200 dark:border-gray-700 shadow-sm">
         <button
@@ -430,14 +432,8 @@ function ForceGraph({
         </button>
         <button
           onClick={() => {
-            const scaleX = width / VIRTUAL_W;
-            const scaleY = height / VIRTUAL_H;
-            const fitZoom = Math.min(scaleX, scaleY, 1);
-            setZoom(fitZoom);
-            setPan({
-              x: (width - VIRTUAL_W * fitZoom) / 2,
-              y: (height - VIRTUAL_H * fitZoom) / 2,
-            });
+            setZoom(1);
+            setPan({ x: 0, y: 0 });
           }}
           className="px-1.5 py-0.5 text-xs rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"
         >
@@ -448,13 +444,12 @@ function ForceGraph({
         </span>
       </div>
       <div className="absolute bottom-2 right-2 z-10 text-[10px] text-gray-400 dark:text-gray-500">
-        Scroll to zoom · Drag to pan · Drag nodes to move
+        Scroll to zoom · Drag background to pan · Drag nodes to place ·
+        Double-click to unpin
       </div>
       <svg
         ref={svgRef}
-        width={width}
-        height={height}
-        className="bg-gray-50 dark:bg-gray-800/30 rounded-lg cursor-grab active:cursor-grabbing"
+        className="absolute inset-0 w-full h-full bg-gray-50 dark:bg-gray-800/30 rounded-lg cursor-grab active:cursor-grabbing"
         onWheel={handleWheel}
         onMouseDown={handleSvgMouseDown}
       >
@@ -488,37 +483,45 @@ function ForceGraph({
             );
           })}
           {/* Nodes */}
-          {nodesRef.current.map((n) => (
-            <g
-              key={n.id}
-              onMouseDown={handleNodeMouseDown(n.id)}
-              style={{ cursor: dragNode === n.id ? "grabbing" : "grab" }}
-            >
-              <circle
-                cx={n.x}
-                cy={n.y}
-                r={18}
-                fill={entityTypeColors[n.entity_type] || "#6b7280"}
-                fillOpacity={0.8}
-                stroke={entityTypeColors[n.entity_type] || "#6b7280"}
-                strokeWidth={2}
-              />
-              <text
-                x={n.x}
-                y={n.y + 30}
-                textAnchor="middle"
-                fontSize={11}
-                fontWeight={500}
-                fill="currentColor"
-                className="text-gray-700 dark:text-gray-300"
+          {nodesRef.current.map((n) => {
+            const isPinned = pinnedRef.current.has(n.id);
+            return (
+              <g
+                key={n.id}
+                onMouseDown={handleNodeMouseDown(n.id)}
+                onDoubleClick={handleNodeDblClick(n.id)}
+                style={{ cursor: dragNode === n.id ? "grabbing" : "grab" }}
               >
-                {n.name}
-              </text>
-            </g>
-          ))}
+                <circle
+                  cx={n.x}
+                  cy={n.y}
+                  r={18}
+                  fill={entityTypeColors[n.entity_type] || "#6b7280"}
+                  fillOpacity={0.8}
+                  stroke={
+                    isPinned
+                      ? "#ffffff"
+                      : entityTypeColors[n.entity_type] || "#6b7280"
+                  }
+                  strokeWidth={isPinned ? 3 : 2}
+                />
+                <text
+                  x={n.x}
+                  y={n.y + 30}
+                  textAnchor="middle"
+                  fontSize={11}
+                  fontWeight={500}
+                  fill="currentColor"
+                  className="text-gray-700 dark:text-gray-300"
+                >
+                  {n.name}
+                </text>
+              </g>
+            );
+          })}
         </g>
       </svg>
-    </div>
+    </>
   );
 }
 
@@ -1180,7 +1183,7 @@ export function KnowledgeGraphPage() {
           ) : (
             <div
               ref={graphContainerRef}
-              className="flex-1 h-0 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden"
+              className="flex-1 h-0 relative border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden"
             >
               <ForceGraph
                 nodes={graphData.nodes}
