@@ -91,7 +91,7 @@ export function LoginPage() {
         <div className="absolute right-0 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-white/10 to-transparent" />
 
         {/* Content */}
-        <div className="relative z-10 flex flex-col justify-between p-12 xl:p-16 2xl:p-20 w-full">
+        <div className="relative z-10 flex flex-col justify-between pt-16 px-12 pb-12 xl:pt-20 xl:px-16 xl:pb-16 2xl:pt-24 2xl:px-20 2xl:pb-20 w-full">
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -100,7 +100,7 @@ export function LoginPage() {
             <img
               src="/codevvrevlogo.png"
               alt=""
-              className="h-20 w-auto opacity-80"
+              className="h-24 w-auto opacity-80"
             />
           </motion.div>
 
