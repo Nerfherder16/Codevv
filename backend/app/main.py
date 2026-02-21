@@ -1,8 +1,9 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Query as Q
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 from app.core.config import get_settings
-from app.core.database import init_db
+from app.core.database import init_db, get_db as _get_db
 from app.api.routes import (
     ai,
     auth,
@@ -81,3 +82,32 @@ app.include_router(documents.router, prefix="/api")
 @app.get("/health")
 async def health():
     return {"status": "ok", "app": settings.app_name, "version": "0.1.0"}
+
+
+# OAuth callback at /callback (matches Claude Code CLI's registered redirect URI)
+
+
+@app.get("/callback")
+async def oauth_callback(code: str = Q(...), state: str = Q(...)):
+    from app.services import claude_auth
+
+    async for db in _get_db():
+        try:
+            await claude_auth.handle_callback(code, state, db)
+            await db.commit()
+            return HTMLResponse(
+                "<html><body style='background:#0f0d1a;color:#e5e7eb;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;margin:0'>"
+                "<div style='text-align:center'>"
+                "<h2 style='color:#38bdf8'>Logged in to Claude!</h2>"
+                "<p>You can close this tab and return to Codevv.</p>"
+                "<script>setTimeout(()=>window.close(),1500)</script>"
+                "</div></body></html>"
+            )
+        except Exception as e:
+            await db.rollback()
+            logger.error("oauth.callback_error", error=str(e))
+            return HTMLResponse(
+                f"<html><body style='background:#0f0d1a;color:#e5e7eb;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;margin:0'>"
+                f"<div style='text-align:center'><h2 style='color:#ef4444'>Login failed</h2><p>{str(e)}</p></div></body></html>",
+                status_code=400,
+            )

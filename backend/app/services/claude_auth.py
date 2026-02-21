@@ -61,10 +61,10 @@ async def start_login(user_id: str) -> dict:
     # Random state
     state = secrets.token_urlsafe(32)
 
-    # Determine callback URL — must be localhost:8000 (Anthropic's allowlist for this client ID)
+    # Determine callback URL — must be localhost + /callback (Anthropic's allowlist)
     callback_url = settings.claude_oauth_callback_url
     if not callback_url:
-        callback_url = "http://localhost:8000/api/auth/claude-callback"
+        callback_url = "http://localhost:8000/callback"
 
     # Store in Redis with TTL
     r = await _get_redis()
