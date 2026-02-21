@@ -23,6 +23,13 @@ import type {
 } from "../../types";
 import { api } from "../../lib/api";
 
+function uuid(): string {
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
+
 type AuthStatus = {
   authenticated: boolean;
   method?: string;
@@ -174,7 +181,7 @@ export function AIChatPanel() {
     if (!text || isStreaming) return;
 
     const userMsg: ChatMessage = {
-      id: crypto.randomUUID(),
+      id: uuid(),
       role: "user",
       content: text,
       timestamp: Date.now(),
@@ -182,7 +189,7 @@ export function AIChatPanel() {
     addMessage(userMsg);
 
     const assistantMsg: ChatMessage = {
-      id: crypto.randomUUID(),
+      id: uuid(),
       role: "assistant",
       content: "",
       toolUses: [],
@@ -251,7 +258,7 @@ export function AIChatPanel() {
       "Extract and save the key decisions, concepts, and architectural insights from this conversation to Recall using the push_to_recall tool.";
 
     const userMsg: ChatMessage = {
-      id: crypto.randomUUID(),
+      id: uuid(),
       role: "user",
       content: prompt,
       timestamp: Date.now(),
@@ -259,7 +266,7 @@ export function AIChatPanel() {
     addMessage(userMsg);
 
     const assistantMsg: ChatMessage = {
-      id: crypto.randomUUID(),
+      id: uuid(),
       role: "assistant",
       content: "",
       toolUses: [],
