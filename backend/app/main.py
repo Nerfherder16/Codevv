@@ -82,6 +82,11 @@ app.include_router(documents.router, prefix="/api")
 app.include_router(workspaces.router, prefix="/api")
 app.include_router(ws_terminal.router)
 
+# Code-server reverse proxy (no /api prefix — routes are /workspace-proxy/...)
+from app.api.routes import ws_proxy  # noqa: E402
+
+app.include_router(ws_proxy.router)
+
 
 @app.get("/health")
 async def health():

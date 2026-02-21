@@ -93,6 +93,14 @@ async def create_workspace(
             name=container_name, config=config
         )
         await container.start()
+
+        # Connect to compose network so backend can proxy by container name
+        try:
+            network = await docker.networks.get("codevv_default")
+            await network.connect({"Container": container_name})
+        except Exception as e:
+            logger.warning("workspace.network_connect_failed", error=str(e))
+
         info = await container.show()
         workspace.container_id = info["Id"][:12]
         workspace.status = "running"
