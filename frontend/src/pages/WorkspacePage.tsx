@@ -1,6 +1,14 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useParams } from "react-router-dom";
-import { Terminal, Play, Square, Plus, Eye, Users } from "lucide-react";
+import {
+  Terminal,
+  Play,
+  Square,
+  Plus,
+  Eye,
+  Users,
+  Loader2,
+} from "lucide-react";
 import { api } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { Button } from "../components/common/Button";
@@ -180,34 +188,27 @@ export function WorkspacePage() {
           icon={<CodeIllustration />}
           title="No workspace running"
           description="Start a code-server instance with a shared terminal for real-time collaboration."
+          actionLabel="Launch Workspace"
+          onAction={handleLaunch}
         />
 
-        <div className="max-w-sm mx-auto mt-2 space-y-4">
-          {/* Scope selector */}
-          <div className="flex items-center justify-center gap-2">
-            <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-medium">
-              Scope
-            </span>
-            {(["project", "user", "global"] as const).map((s) => (
-              <Badge
-                key={s}
-                variant={scope === s ? "teal" : "default"}
-                size="md"
-                className="cursor-pointer select-none"
-              >
-                <button onClick={() => setScope(s)} className="capitalize">
-                  {s}
-                </button>
-              </Badge>
-            ))}
-          </div>
-
-          <div className="flex justify-center">
-            <Button onClick={handleLaunch} loading={launching}>
-              <Play className="w-4 h-4" />
-              Launch Workspace
-            </Button>
-          </div>
+        {/* Scope selector */}
+        <div className="flex items-center justify-center gap-2 -mt-10">
+          <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-medium">
+            Scope
+          </span>
+          {(["project", "user", "global"] as const).map((s) => (
+            <Badge
+              key={s}
+              variant={scope === s ? "teal" : "default"}
+              size="md"
+              className="cursor-pointer select-none"
+            >
+              <button onClick={() => setScope(s)} className="capitalize">
+                {s}
+              </button>
+            </Badge>
+          ))}
         </div>
       </div>
     );
@@ -218,15 +219,15 @@ export function WorkspacePage() {
     return (
       <div>
         <PageHeader title="Workspace" description="Starting container..." />
-        <div className="flex flex-col items-center justify-center h-64 gap-4">
-          <PageLoading />
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+        <Card className="flex flex-col items-center justify-center py-16 px-4 text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-teal mb-4" />
+          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
             Starting workspace container...
           </p>
-          <p className="text-xs text-gray-400 dark:text-gray-500">
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
             This usually takes 10-30 seconds
           </p>
-        </div>
+        </Card>
       </div>
     );
   }
@@ -235,30 +236,30 @@ export function WorkspacePage() {
   const iframeUrl = `http://${window.location.hostname}:${workspace.port}/?folder=/config/workspace`;
 
   return (
-    <div className="flex flex-col h-[calc(100vh-5rem)]">
-      {/* Header bar */}
-      <div className="flex items-center justify-between mb-3 shrink-0">
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold">Workspace</h1>
-          <Badge variant="success" size="md">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            Port {workspace.port}
-          </Badge>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={handleNewTerminal}>
-            <Plus className="w-4 h-4" />
-            Terminal
-          </Button>
-          <Button variant="danger" size="sm" onClick={handleStop}>
-            <Square className="w-4 h-4" />
-            Stop
-          </Button>
-        </div>
-      </div>
+    <div>
+      <PageHeader
+        title="Workspace"
+        description="Cloud code editor with shared terminals."
+        action={
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300">
+              <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+              Port {workspace.port}
+            </span>
+            <Button variant="ghost" size="sm" onClick={handleNewTerminal}>
+              <Plus className="w-4 h-4" />
+              Terminal
+            </Button>
+            <Button variant="danger" size="sm" onClick={handleStop}>
+              <Square className="w-4 h-4" />
+              Stop
+            </Button>
+          </div>
+        }
+      />
 
       {/* Main content: iframe + optional terminal sidebar */}
-      <div className="flex flex-1 min-h-0 gap-3">
+      <div className="flex gap-3" style={{ height: "calc(100vh - 10rem)" }}>
         {/* Code editor iframe */}
         <Card className="flex-1 min-w-0 p-0 overflow-hidden">
           <iframe
@@ -283,7 +284,7 @@ export function WorkspacePage() {
                   className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer ${
                     activeTerminal?.id === t.id
                       ? "bg-teal/10 text-teal"
-                      : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/[0.04]"
+                      : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50"
                   }`}
                 >
                   <button
@@ -306,7 +307,7 @@ export function WorkspacePage() {
                         ? "Switch to read-only"
                         : "Switch to collaborative"
                     }
-                    className="p-1 hover:bg-gray-200 dark:hover:bg-white/10 rounded transition-colors"
+                    className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
                   >
                     {t.mode === "collaborative" ? (
                       <Users className="w-3.5 h-3.5" />
