@@ -23,6 +23,20 @@ export default defineConfig({
         target: "http://backend:8000",
         changeOrigin: true,
       },
+      "/workspace-proxy": {
+        target: "http://backend:8000",
+        changeOrigin: true,
+        ws: true,
+      },
+      "/ws": {
+        target: "http://backend:8000",
+        changeOrigin: true,
+        ws: true,
+      },
+      "/callback": {
+        target: "http://backend:8000",
+        changeOrigin: true,
+      },
     },
   },
 });

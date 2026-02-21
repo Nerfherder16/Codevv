@@ -224,7 +224,7 @@ export function WorkspacePage() {
   }
 
   // Running — code editor + terminal panel
-  const iframeUrl = `/api/workspace-proxy/${workspace.id}/?folder=/config/workspace`;
+  const iframeUrl = `/workspace-proxy/${workspace.id}/?folder=/config/workspace`;
 
   return (
     <div>
