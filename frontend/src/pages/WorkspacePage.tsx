@@ -1,14 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useParams } from "react-router-dom";
-import {
-  Terminal,
-  Play,
-  Square,
-  Plus,
-  Eye,
-  Users,
-  Loader2,
-} from "lucide-react";
+import { Terminal, Square, Plus, Eye, Users, Loader2 } from "lucide-react";
 import { api } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { Button } from "../components/common/Button";
@@ -16,7 +8,7 @@ import { Card } from "../components/common/Card";
 import { Badge } from "../components/common/Badge";
 import { PageHeader } from "../components/common/PageHeader";
 import { PageLoading } from "../components/common/LoadingSpinner";
-import { EmptyState, CodeIllustration } from "../components/common/EmptyState";
+import { EmptyState } from "../components/common/EmptyState";
 import { SharedTerminal } from "../components/workspace/SharedTerminal";
 import type { Workspace, TerminalSession, WorkspaceScope } from "../types";
 
@@ -182,34 +174,33 @@ export function WorkspacePage() {
         <PageHeader
           title="Workspace"
           description="Launch a cloud code editor with shared terminals."
+          action={
+            <div className="flex items-center gap-2">
+              {(["project", "user", "global"] as const).map((s) => (
+                <Badge
+                  key={s}
+                  variant={scope === s ? "teal" : "default"}
+                  size="md"
+                  className="cursor-pointer select-none"
+                >
+                  <button onClick={() => setScope(s)} className="capitalize">
+                    {s}
+                  </button>
+                </Badge>
+              ))}
+            </div>
+          }
         />
 
         <EmptyState
-          icon={<CodeIllustration />}
+          icon={
+            <Terminal className="w-10 h-10 text-gray-400 dark:text-gray-600" />
+          }
           title="No workspace running"
           description="Start a code-server instance with a shared terminal for real-time collaboration."
           actionLabel="Launch Workspace"
           onAction={handleLaunch}
         />
-
-        {/* Scope selector */}
-        <div className="flex items-center justify-center gap-2 -mt-10">
-          <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-medium">
-            Scope
-          </span>
-          {(["project", "user", "global"] as const).map((s) => (
-            <Badge
-              key={s}
-              variant={scope === s ? "teal" : "default"}
-              size="md"
-              className="cursor-pointer select-none"
-            >
-              <button onClick={() => setScope(s)} className="capitalize">
-                {s}
-              </button>
-            </Badge>
-          ))}
-        </div>
       </div>
     );
   }
