@@ -26,7 +26,7 @@ class Workspace(Base):
         UUID(as_uuid=True), ForeignKey("users.id"), nullable=False
     )
     container_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
-    port: Mapped[int] = mapped_column(Integer, nullable=False, unique=True)
+    port: Mapped[int] = mapped_column(Integer, nullable=False)
     status: Mapped[str] = mapped_column(String(20), default="starting")
     scope: Mapped[str] = mapped_column(String(20), default="project")
     last_activity: Mapped[datetime] = mapped_column(
