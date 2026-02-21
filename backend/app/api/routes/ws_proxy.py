@@ -63,6 +63,7 @@ async def proxy_http(request: Request, workspace_id: uuid.UUID, path: str):
 
 @router.websocket("/workspace-proxy/{workspace_id}/{path:path}")
 async def proxy_ws(ws: WebSocket, workspace_id: uuid.UUID, path: str):
+    logger.info("ws_proxy.connect", workspace_id=str(workspace_id), path=path)
     await ws.accept()
 
     target = f"ws://codevv-ws-{workspace_id}:8443/{path}"
@@ -70,8 +71,13 @@ async def proxy_ws(ws: WebSocket, workspace_id: uuid.UUID, path: str):
     if qs:
         target += f"?{qs}"
 
+    logger.info("ws_proxy.upstream", target=target)
+
     try:
-        async with websockets.connect(target, max_size=2**22) as upstream:
+        async with websockets.connect(
+            target, max_size=2**22, ping_interval=30, ping_timeout=10
+        ) as upstream:
+            logger.info("ws_proxy.upstream_connected")
 
             async def client_to_upstream():
                 try:
@@ -81,8 +87,8 @@ async def proxy_ws(ws: WebSocket, workspace_id: uuid.UUID, path: str):
                             await upstream.send(msg["text"])
                         elif msg.get("bytes") is not None:
                             await upstream.send(msg["bytes"])
-                except (WebSocketDisconnect, RuntimeError):
-                    pass
+                except (WebSocketDisconnect, RuntimeError) as e:
+                    logger.info("ws_proxy.client_disconnected", reason=str(e))
 
             async def upstream_to_client():
                 try:
@@ -91,8 +97,8 @@ async def proxy_ws(ws: WebSocket, workspace_id: uuid.UUID, path: str):
                             await ws.send_text(msg)
                         else:
                             await ws.send_bytes(msg)
-                except websockets.exceptions.ConnectionClosed:
-                    pass
+                except websockets.exceptions.ConnectionClosed as e:
+                    logger.info("ws_proxy.upstream_closed", reason=str(e))
 
             done, pending = await asyncio.wait(
                 [
@@ -106,6 +112,7 @@ async def proxy_ws(ws: WebSocket, workspace_id: uuid.UUID, path: str):
     except Exception as e:
         logger.warning("ws_proxy.error", error=str(e))
     finally:
+        logger.info("ws_proxy.done", workspace_id=str(workspace_id))
         try:
             await ws.close()
         except Exception:
