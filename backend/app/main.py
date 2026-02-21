@@ -22,6 +22,8 @@ from app.api.routes import (
     audit,
     compliance,
     documents,
+    workspaces,
+    ws_terminal,
 )
 import structlog
 
@@ -77,6 +79,8 @@ app.include_router(solana.router, prefix="/api")
 app.include_router(audit.router, prefix="/api")
 app.include_router(compliance.router, prefix="/api")
 app.include_router(documents.router, prefix="/api")
+app.include_router(workspaces.router, prefix="/api")
+app.include_router(ws_terminal.router)
 
 
 @app.get("/health")

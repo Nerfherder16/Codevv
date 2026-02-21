@@ -20,6 +20,7 @@ import { SolanaPage } from "./pages/SolanaPage";
 import { AuditPage } from "./pages/AuditPage";
 import { CompliancePage } from "./pages/CompliancePage";
 import { DocumentsPage } from "./pages/DocumentsPage";
+import { WorkspacePage } from "./pages/WorkspacePage";
 
 export default function App() {
   return (
@@ -44,6 +45,7 @@ export default function App() {
           <Route path="pipeline" element={<PipelinePage />} />
           <Route path="solana" element={<SolanaPage />} />
           <Route path="rooms" element={<VideoRoomsPage />} />
+          <Route path="workspace" element={<WorkspacePage />} />
           <Route path="deploy" element={<DeployPage />} />
           <Route path="audit" element={<AuditPage />} />
           <Route path="compliance" element={<CompliancePage />} />

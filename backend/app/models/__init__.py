@@ -12,6 +12,8 @@ from app.models.audit import AuditReport
 from app.models.compliance import ComplianceChecklist, ComplianceCheck
 from app.models.conversation import Conversation, ConversationMessage
 from app.models.claude_credential import ClaudeCredential
+from app.models.workspace import Workspace
+from app.models.terminal_session import TerminalSession
 
 __all__ = [
     "User",
@@ -37,4 +39,6 @@ __all__ = [
     "Conversation",
     "ConversationMessage",
     "ClaudeCredential",
+    "Workspace",
+    "TerminalSession",
 ]

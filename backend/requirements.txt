@@ -19,3 +19,4 @@ sse-starlette==2.2.1
 livekit-api==0.7.1
 python-docx==1.1.2
 anthropic>=0.42.0
+aiodocker>=0.22.0

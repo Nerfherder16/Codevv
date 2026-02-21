@@ -43,6 +43,12 @@ class Settings(BaseSettings):
     claude_max_turns: int = 25
     claude_oauth_callback_url: str = ""
 
+    # Workspaces (code-server)
+    workspace_port_start: int = 9000
+    workspace_port_end: int = 9099
+    workspace_image: str = "codevv-code-server:latest"
+    workspace_idle_timeout_min: int = 60
+
     # App
     environment: str = "development"
     app_name: str = "Codevv"

@@ -16,6 +16,7 @@ import {
   ClipboardCheck,
   Shield,
   FileText,
+  Terminal,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 
@@ -48,6 +49,7 @@ const NAV_GROUPS: NavGroup[] = [
       { to: "scaffold", icon: Code2, label: "Code Scaffold" },
       { to: "pipeline", icon: Workflow, label: "Pipeline" },
       { to: "dependencies", icon: GitBranch, label: "Dependency Map" },
+      { to: "workspace", icon: Terminal, label: "Workspace" },
       { to: "deploy", icon: Rocket, label: "Deploy" },
     ],
   },

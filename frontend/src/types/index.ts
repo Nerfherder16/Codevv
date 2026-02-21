@@ -451,3 +451,28 @@ export interface AIModel {
   name: string;
   description: string;
 }
+
+// Workspaces
+export type WorkspaceStatus = "starting" | "running" | "stopping" | "stopped";
+export type WorkspaceScope = "project" | "user" | "global";
+export type TerminalMode = "collaborative" | "readonly";
+
+export interface Workspace {
+  id: string;
+  project_id: string;
+  user_id: string;
+  port: number;
+  status: WorkspaceStatus;
+  scope: WorkspaceScope;
+  last_activity: string;
+  created_at: string;
+}
+
+export interface TerminalSession {
+  id: string;
+  workspace_id: string;
+  tmux_session: string;
+  owner_id: string;
+  mode: TerminalMode;
+  created_at: string;
+}
