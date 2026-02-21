@@ -83,7 +83,8 @@ async def create_workspace(
             "PGID=1000",
             "TZ=America/New_York",
             "PASSWORD=",
-            "PROXY_DOMAIN=localhost",
+            "CS_DISABLE_PROXY=1",
+            "DEFAULT_WORKSPACE=/config/workspace",
         ],
     }
 

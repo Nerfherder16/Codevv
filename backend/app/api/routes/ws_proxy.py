@@ -64,18 +64,35 @@ async def proxy_http(request: Request, workspace_id: uuid.UUID, path: str):
 @router.websocket("/workspace-proxy/{workspace_id}/{path:path}")
 async def proxy_ws(ws: WebSocket, workspace_id: uuid.UUID, path: str):
     logger.info("ws_proxy.connect", workspace_id=str(workspace_id), path=path)
-    await ws.accept()
+
+    # Read requested subprotocol from client (if any)
+    proto_header = ws.headers.get("sec-websocket-protocol", "")
+    subprotocols = [p.strip() for p in proto_header.split(",") if p.strip()]
+    chosen = subprotocols[0] if subprotocols else None
+
+    logger.info("ws_proxy.handshake", subprotocols=subprotocols)
+    await ws.accept(subprotocol=chosen)
 
     target = f"ws://codevv-ws-{workspace_id}:8443/{path}"
     qs = str(ws.query_params)
     if qs:
         target += f"?{qs}"
 
+    # Set Origin to match the target Host so code-server's ensureOrigin()
+    # CSRF check passes. Without this, Origin mismatch → 403 → WS 1006.
+    upstream_host = f"codevv-ws-{workspace_id}:8443"
+
     logger.info("ws_proxy.upstream", target=target)
 
     try:
         async with websockets.connect(
-            target, max_size=2**22, ping_interval=30, ping_timeout=10
+            target,
+            max_size=2**24,  # 16MB — VS Code can send large messages
+            ping_interval=30,
+            ping_timeout=20,
+            origin=f"http://{upstream_host}",
+            additional_headers={"Host": upstream_host},
+            subprotocols=subprotocols if subprotocols else None,
         ) as upstream:
             logger.info("ws_proxy.upstream_connected")
 
@@ -109,8 +126,14 @@ async def proxy_ws(ws: WebSocket, workspace_id: uuid.UUID, path: str):
             )
             for task in pending:
                 task.cancel()
+    except websockets.exceptions.InvalidStatusCode as e:
+        logger.warning(
+            "ws_proxy.upstream_rejected",
+            status=e.status_code,
+            workspace_id=str(workspace_id),
+        )
     except Exception as e:
-        logger.warning("ws_proxy.error", error=str(e))
+        logger.warning("ws_proxy.error", error=str(e), type=type(e).__name__)
     finally:
         logger.info("ws_proxy.done", workspace_id=str(workspace_id))
         try:
