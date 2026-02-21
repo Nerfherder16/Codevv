@@ -23,11 +23,27 @@ async def get_docker() -> aiodocker.Docker:
 
 
 async def _allocate_port(db: AsyncSession) -> int:
-    """Find the lowest unused port in the configured range."""
+    """Find the lowest unused port in the configured range.
+    Checks both DB records and actual Docker containers.
+    """
     result = await db.execute(
         select(Workspace.port).where(Workspace.status.in_(["starting", "running"]))
     )
     used = {row[0] for row in result.all()}
+
+    # Also check Docker for containers actually binding ports
+    try:
+        docker = await get_docker()
+        containers = await docker.containers.list(all=True)
+        for c in containers:
+            info = c._container  # noqa: SLF001
+            ports = info.get("Ports", [])
+            for p in ports:
+                if isinstance(p, dict) and p.get("PublicPort"):
+                    used.add(p["PublicPort"])
+    except Exception:
+        pass  # fall back to DB-only check
+
     for port in range(settings.workspace_port_start, settings.workspace_port_end + 1):
         if port not in used:
             return port
@@ -71,9 +87,10 @@ async def create_workspace(
         ],
     }
 
+    container_name = f"codevv-ws-{ws_id}"
     try:
         container = await docker.containers.create_or_replace(
-            name=f"codevv-ws-{ws_id}", config=config
+            name=container_name, config=config
         )
         await container.start()
         info = await container.show()
@@ -88,6 +105,12 @@ async def create_workspace(
     except Exception as e:
         workspace.status = "stopped"
         logger.error("workspace.start_failed", error=str(e))
+        # Clean up the created container so it doesn't hold the port
+        try:
+            stale = await docker.containers.get(container_name)
+            await stale.delete(force=True)
+        except Exception:
+            pass
         raise
 
     await db.flush()
