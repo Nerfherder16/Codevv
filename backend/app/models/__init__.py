@@ -18,7 +18,9 @@ from app.models.project_invite import ProjectInvite, InviteStatus  # noqa: F401
 from app.models.password_reset import PasswordResetToken  # noqa: F401
 from app.models.organization import Organization, OrgMembership, OrgRole, OrgMemberStatus  # noqa: F401
 from app.models.activity import Activity  # noqa: F401
-from app.models.task import Task, TaskStatus, TaskPriority  # noqa: F401
+from app.models.task import Task, TaskStatus, TaskPriority
+from app.models.file import File
+from app.models.business_rule import BusinessRule, RuleEnforcement, RuleScope  # noqa: F401
 from app.models.comment import Comment, Reference  # noqa: F401
 __all__ = [
     "User",
@@ -58,6 +60,10 @@ __all__ = [
     "Task",
     "TaskStatus",
     "TaskPriority",
+    "File",
+    "BusinessRule",
+    "RuleEnforcement",
+    "RuleScope",
     "Comment",
     "Reference",
 ]

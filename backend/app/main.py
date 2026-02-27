@@ -28,6 +28,7 @@ from app.api.routes import (
     events,
     tasks,
     comments,
+    files,
 )
 import structlog
 
@@ -195,6 +196,7 @@ app.include_router(events.router)
 app.include_router(tasks.router, prefix="/api")
 app.include_router(tasks.my_tasks_router, prefix="/api")
 app.include_router(comments.router, prefix="/api")
+app.include_router(files.router, prefix="/api")
 
 
 @app.get("/health")

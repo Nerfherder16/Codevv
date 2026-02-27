@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from typing import Optional
 import uuid
 from datetime import datetime
-from app.models.project import ProjectRole
+from app.models.project import ProjectRole, ProjectPersona
 
 
 class ProjectCreate(BaseModel):
@@ -28,6 +28,7 @@ class MemberResponse(BaseModel):
     display_name: str
     email: str
     role: ProjectRole
+    persona: ProjectPersona = ProjectPersona.creator
     joined_at: datetime
 
 

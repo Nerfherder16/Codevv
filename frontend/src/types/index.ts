@@ -33,6 +33,7 @@ export interface ProjectMember {
   display_name: string;
   email: string;
   role: ProjectRole;
+  persona: ProjectPersona;
   joined_at: string;
 }
 
@@ -614,4 +615,38 @@ export interface Reference {
   relation: string | null;
   created_by: string;
   created_at: string;
+}
+
+// File storage
+export interface ProjectFile {
+  id: string;
+  project_id: string;
+  original_filename: string;
+  mime_type: string;
+  size_bytes: number;
+  source: "document" | "chat_attachment" | "canvas_export";
+  recall_memory_id: string | null;
+  uploaded_by: string;
+  created_at: string;
+}
+
+// Business rules
+export type RuleEnforcement = "mandatory" | "recommended" | "advisory";
+export type RuleScope = "architecture" | "compliance" | "security" | "financial" | "operational" | "coding";
+
+export interface BusinessRule {
+  id: string;
+  project_id: string;
+  title: string;
+  description: string;
+  rationale: string | null;
+  enforcement: RuleEnforcement;
+  scope: RuleScope;
+  version: number;
+  supersedes_id: string | null;
+  active: boolean;
+  recall_memory_id: string | null;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
 }

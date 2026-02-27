@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { NavLink, useParams } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -21,7 +21,10 @@ import {
   CheckSquare,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
+import { api } from "../../lib/api";
+import { useAuth } from "../../contexts/AuthContext";
 import { useEventStreamContext } from "../../contexts/EventStreamContext";
+import type { ProjectMember } from "../../types";
 
 interface NavItem {
   to: string;
@@ -35,54 +38,100 @@ interface NavGroup {
   items: NavItem[];
 }
 
-const NAV_GROUPS: NavGroup[] = [
-  {
-    label: "Core",
-    items: [
-      { to: "", icon: LayoutDashboard, label: "Overview", end: true },
-      { to: "chat", icon: MessageSquare, label: "AI Chat" },
-      { to: "tasks", icon: CheckSquare, label: "Tasks" },
-      { to: "canvas", icon: Pencil, label: "Canvas" },
-      { to: "ideas", icon: Lightbulb, label: "Idea Vault" },
-      { to: "knowledge", icon: Share2, label: "Knowledge Graph" },
-      { to: "documents", icon: FileText, label: "Documents" },
-    ],
-  },
-  {
-    label: "Build",
-    items: [
-      { to: "scaffold", icon: Code2, label: "Code Scaffold" },
-      { to: "pipeline", icon: Workflow, label: "Pipeline" },
-      { to: "dependencies", icon: GitBranch, label: "Dependency Map" },
-      { to: "workspace", icon: Terminal, label: "Workspace" },
-      { to: "deploy", icon: Rocket, label: "Deploy" },
-    ],
-  },
-  {
-    label: "Platform",
-    items: [
-      { to: "rules", icon: BookOpen, label: "Business Rules" },
-      { to: "solana", icon: Coins, label: "Blockchain" },
-      { to: "rooms", icon: Video, label: "Video Rooms" },
-    ],
-  },
-  {
-    label: "Operations",
-    items: [
-      { to: "audit", icon: ClipboardCheck, label: "Audit Prep" },
-      { to: "compliance", icon: Shield, label: "Launch Readiness" },
-    ],
-  },
+const CORE_GROUP: NavGroup = {
+  label: "Core",
+  items: [
+    { to: "", icon: LayoutDashboard, label: "Overview", end: true },
+    { to: "chat", icon: MessageSquare, label: "AI Chat" },
+    { to: "tasks", icon: CheckSquare, label: "Tasks" },
+    { to: "canvas", icon: Pencil, label: "Canvas" },
+    { to: "ideas", icon: Lightbulb, label: "Idea Vault" },
+    { to: "knowledge", icon: Share2, label: "Knowledge Graph" },
+    { to: "documents", icon: FileText, label: "Documents" },
+  ],
+};
+
+const BUILD_GROUP: NavGroup = {
+  label: "Build",
+  items: [
+    { to: "scaffold", icon: Code2, label: "Code Scaffold" },
+    { to: "pipeline", icon: Workflow, label: "Pipeline" },
+    { to: "dependencies", icon: GitBranch, label: "Dependency Map" },
+    { to: "workspace", icon: Terminal, label: "Workspace" },
+    { to: "deploy", icon: Rocket, label: "Deploy" },
+  ],
+};
+
+const PLATFORM_GROUP: NavGroup = {
+  label: "Platform",
+  items: [
+    { to: "rules", icon: BookOpen, label: "Business Rules" },
+    { to: "solana", icon: Coins, label: "Blockchain" },
+    { to: "rooms", icon: Video, label: "Video Rooms" },
+  ],
+};
+
+const OPERATIONS_GROUP: NavGroup = {
+  label: "Operations",
+  items: [
+    { to: "audit", icon: ClipboardCheck, label: "Audit Prep" },
+    { to: "compliance", icon: Shield, label: "Launch Readiness" },
+  ],
+};
+
+// Default order: developer-first
+const DEFAULT_ORDER: NavGroup[] = [
+  CORE_GROUP,
+  BUILD_GROUP,
+  PLATFORM_GROUP,
+  OPERATIONS_GROUP,
 ];
+
+function getGroupsForPersona(persona: string | null | undefined): NavGroup[] {
+  switch (persona) {
+    case "creator":
+      // Creators care about content, rules, knowledge before code
+      return [CORE_GROUP, PLATFORM_GROUP, BUILD_GROUP, OPERATIONS_GROUP];
+    case "finance":
+    case "operations":
+      // Finance/ops care about validation and compliance first
+      return [CORE_GROUP, OPERATIONS_GROUP, PLATFORM_GROUP, BUILD_GROUP];
+    case "developer":
+    default:
+      return DEFAULT_ORDER;
+  }
+}
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(
     () => localStorage.getItem("bh-sidebar") === "collapsed",
   );
   const { projectId } = useParams();
+  const { user } = useAuth();
   const { badgeCounts } = useEventStreamContext();
   const overviewBadge = projectId ? (badgeCounts[projectId] ?? 0) : 0;
   const basePath = projectId ? `/projects/${projectId}` : "/";
+
+  const [navGroups, setNavGroups] = useState<NavGroup[]>(DEFAULT_ORDER);
+
+  const loadPersona = useCallback(async () => {
+    if (!projectId || !user) return;
+    try {
+      const members = await api.get<ProjectMember[]>(
+        `/projects/${projectId}/members`,
+      );
+      const me = members.find((m) => m.user_id === user.id);
+      if (me?.persona) {
+        setNavGroups(getGroupsForPersona(me.persona));
+      }
+    } catch {
+      // Silent fail — keep default order
+    }
+  }, [projectId, user]);
+
+  useEffect(() => {
+    loadPersona();
+  }, [loadPersona]);
 
   const toggleCollapse = () => {
     const next = !collapsed;
@@ -181,7 +230,7 @@ export function Sidebar() {
 
       {/* Nav */}
       <nav className="flex-1 py-2 overflow-y-auto relative z-0">
-        {NAV_GROUPS.map((group) => (
+        {navGroups.map((group) => (
           <div key={group.label} className="mb-1">
             {!collapsed && (
               <div className="px-4 pt-4 pb-1.5">
@@ -216,7 +265,7 @@ export function Sidebar() {
                     )}
                     {item.end && overviewBadge > 0 && (
                       <span className="ml-auto min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-[var(--accent-primary)] text-[var(--bg-page)] text-[10px] font-bold px-1">
-                        {overviewBadge > 99 ? '99+' : overviewBadge}
+                        {overviewBadge > 99 ? "99+" : overviewBadge}
                       </span>
                     )}
                   </>

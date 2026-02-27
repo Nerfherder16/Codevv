@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
-import { Upload, FileText, Loader2, Eye, X } from "lucide-react";
+import { Upload, FileText, Loader2, Eye, X, Download } from "lucide-react";
 import { api } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { Button } from "../components/common/Button";
@@ -8,20 +8,15 @@ import { Card } from "../components/common/Card";
 import { PageHeader } from "../components/common/PageHeader";
 import { PageLoading } from "../components/common/LoadingSpinner";
 import { EmptyState } from "../components/common/EmptyState";
-import { relativeTime } from "../lib/utils";
+import { relativeTime, formatBytes } from "../lib/utils";
 
 interface DocEntry {
   id: string;
   filename: string;
-  content_type: string | null;
+  mime_type: string | null;
+  size_bytes: number | null;
+  memory_id: string | null;
   created_at: string | null;
-}
-
-interface UploadResponse {
-  filename: string;
-  size: number;
-  domain: string;
-  memory_id: string;
 }
 
 export function DocumentsPage() {
@@ -67,9 +62,8 @@ export function DocumentsPage() {
       form.append("file", file);
       const headers: Record<string, string> = {};
       const token = localStorage.getItem("bh-token");
-      if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
-      }
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+
       const res = await fetch(`/api/projects/${projectId}/documents/upload`, {
         method: "POST",
         headers,
@@ -79,22 +73,8 @@ export function DocumentsPage() {
         const err = await res.json().catch(() => ({ detail: "Upload failed" }));
         throw new Error(err.detail || "Upload failed");
       }
-      const data: UploadResponse = await res.json();
-      toast("Document uploaded!", "success");
-
-      // Optimistically add to list immediately
-      setDocs((prev) => [
-        {
-          id: data.memory_id,
-          filename: data.filename,
-          content_type: file.type || "text/plain",
-          created_at: new Date().toISOString(),
-        },
-        ...prev,
-      ]);
-
-      // Also re-fetch after a short delay to sync with Recall
-      setTimeout(() => fetchDocs(), 2000);
+      toast("Document uploaded successfully", "success");
+      await fetchDocs();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Upload failed";
       toast(message, "error");
@@ -119,6 +99,29 @@ export function DocumentsPage() {
       setViewContent(`Error: ${message}`);
     } finally {
       setViewLoading(false);
+    }
+  };
+
+  const handleDownload = (doc: DocEntry) => {
+    const token = localStorage.getItem("bh-token");
+    const url = `/api/projects/${projectId}/documents/${doc.id}/download`;
+    // Trigger download via anchor element
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = doc.filename;
+    if (token) {
+      // Fetch with auth and create object URL
+      fetch(url, { headers: { Authorization: `Bearer ${token}` } })
+        .then((res) => res.blob())
+        .then((blob) => {
+          const blobUrl = URL.createObjectURL(blob);
+          a.href = blobUrl;
+          a.click();
+          URL.revokeObjectURL(blobUrl);
+        })
+        .catch(() => toast("Download failed", "error"));
+    } else {
+      a.click();
     }
   };
 
@@ -158,7 +161,7 @@ export function DocumentsPage() {
             <FileText className="w-10 h-10 text-gray-400 dark:text-gray-600" />
           }
           title="No documents yet"
-          description="Upload text files or DOCX documents to store them in your project's Recall knowledge base."
+          description="Upload text files or DOCX documents to store them in your project's knowledge base."
           actionLabel="Upload Document"
           onAction={() =>
             document
@@ -171,8 +174,7 @@ export function DocumentsPage() {
           {docs.map((doc) => (
             <Card
               key={doc.id}
-              className="flex items-start gap-3 cursor-pointer hover:border-cyan-500/30 transition-colors"
-              onClick={() => handleView(doc)}
+              className="flex items-start gap-3 hover:border-cyan-500/30 transition-colors"
             >
               <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-cyan-500/10 text-cyan-400 shrink-0">
                 <FileText className="w-5 h-5" />
@@ -182,11 +184,28 @@ export function DocumentsPage() {
                   {doc.filename}
                 </h3>
                 <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                  {doc.content_type || "text/plain"}
+                  {doc.size_bytes != null
+                    ? formatBytes(doc.size_bytes)
+                    : doc.mime_type || ""}
                   {doc.created_at && ` · ${relativeTime(doc.created_at)}`}
                 </p>
               </div>
-              <Eye className="w-4 h-4 text-gray-400 shrink-0 mt-1" />
+              <div className="flex items-center gap-1 shrink-0 mt-0.5">
+                <button
+                  onClick={() => handleView(doc)}
+                  title="View content"
+                  className="p-1.5 rounded-md text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-colors"
+                >
+                  <Eye className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => handleDownload(doc)}
+                  title="Download original"
+                  className="p-1.5 rounded-md text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-colors"
+                >
+                  <Download className="w-4 h-4" />
+                </button>
+              </div>
             </Card>
           ))}
         </div>
@@ -202,15 +221,26 @@ export function DocumentsPage() {
                   {viewDoc.filename}
                 </h2>
                 <p className="text-xs text-gray-400 mt-0.5">
-                  {viewDoc.content_type || "text/plain"}
+                  {viewDoc.size_bytes != null
+                    ? formatBytes(viewDoc.size_bytes)
+                    : viewDoc.mime_type || ""}
                 </p>
               </div>
-              <button
-                onClick={() => setViewDoc(null)}
-                className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => handleDownload(viewDoc)}
+                  title="Download"
+                  className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                >
+                  <Download className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setViewDoc(null)}
+                  className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
             <div className="flex-1 overflow-auto p-4">
               {viewLoading ? (

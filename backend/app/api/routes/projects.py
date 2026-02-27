@@ -121,7 +121,7 @@ async def get_project(
         u = u_result.scalar_one()
         members.append(MemberResponse(
             id=m.id, user_id=m.user_id, display_name=u.display_name,
-            email=u.email, role=m.role, joined_at=m.joined_at,
+            email=u.email, role=m.role, persona=m.persona, joined_at=m.joined_at,
         ))
     return ProjectDetailResponse(
         id=project.id, name=project.name, slug=project.slug,

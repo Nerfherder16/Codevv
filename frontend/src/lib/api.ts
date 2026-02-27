@@ -130,4 +130,60 @@ export const api = {
         `/projects/${projectId}/references?entity_type=${entityType}&entity_id=${entityId}`
       ),
   },
+
+  files: {
+    list: (projectId: string, source?: string) => {
+      const q = source ? `?source=${source}` : '';
+      return request<import('../types').ProjectFile[]>(`/projects/${projectId}/files${q}`);
+    },
+    upload: (projectId: string, file: File, source = 'document') => {
+      const form = new FormData();
+      form.append('file', file);
+      const token = localStorage.getItem('bh-token');
+      return fetch(`${API_BASE}/projects/${projectId}/files/upload?source=${source}`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: form,
+      }).then(async (res) => {
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ detail: res.statusText }));
+          throw new Error(err.detail || `HTTP ${res.status}`);
+        }
+        return res.json() as Promise<import('../types').ProjectFile>;
+      });
+    },
+    get: (projectId: string, fileId: string) =>
+      request<import('../types').ProjectFile>(`/projects/${projectId}/files/${fileId}`),
+    downloadUrl: (projectId: string, fileId: string) =>
+      `${API_BASE}/projects/${projectId}/files/${fileId}/download`,
+    delete: (projectId: string, fileId: string) =>
+      request<void>(`/projects/${projectId}/files/${fileId}`, { method: 'DELETE' }),
+  },
+
+  rules: {
+    list: (projectId: string, params?: { scope?: string; enforcement?: string; active_only?: boolean }) => {
+      const qs = new URLSearchParams();
+      if (params?.scope) qs.set('scope', params.scope);
+      if (params?.enforcement) qs.set('enforcement', params.enforcement);
+      if (params?.active_only != null) qs.set('active_only', String(params.active_only));
+      const q = qs.toString() ? `?${qs.toString()}` : '';
+      return request<import('../types').BusinessRule[]>(`/projects/${projectId}/rules${q}`);
+    },
+    get: (projectId: string, ruleId: string) =>
+      request<import('../types').BusinessRule>(`/projects/${projectId}/rules/${ruleId}`),
+    create: (projectId: string, data: {
+      title: string; description: string; rationale?: string;
+      enforcement: string; scope: string;
+    }) => request<import('../types').BusinessRule>(`/projects/${projectId}/rules`, {
+      method: 'POST', body: JSON.stringify(data),
+    }),
+    update: (projectId: string, ruleId: string, data: Partial<{
+      title: string; description: string; rationale: string;
+      enforcement: string; scope: string; active: boolean;
+    }>) => request<import('../types').BusinessRule>(`/projects/${projectId}/rules/${ruleId}`, {
+      method: 'PATCH', body: JSON.stringify(data),
+    }),
+    deactivate: (projectId: string, ruleId: string) =>
+      request<void>(`/projects/${projectId}/rules/${ruleId}`, { method: 'DELETE' }),
+  },
 };
