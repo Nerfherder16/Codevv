@@ -192,6 +192,7 @@ async def add_check(
         title=req.title,
         description=req.description,
         category=req.category,
+        auto_evaluate=req.auto_evaluate,
     )
     db.add(check)
     await db.flush()
@@ -226,6 +227,8 @@ async def update_check(
         check.notes = req.notes
     if req.assigned_to is not None:
         check.assigned_to = req.assigned_to
+    if req.auto_evaluate is not None:
+        check.auto_evaluate = req.auto_evaluate
     check.updated_by = user.id
     await db.flush()
     if req.status is not None:

@@ -1,7 +1,7 @@
 import uuid
 import enum
 from datetime import datetime, timezone
-from sqlalchemy import String, DateTime, ForeignKey, Text, Enum as SAEnum, Index
+from sqlalchemy import Boolean, String, DateTime, ForeignKey, Text, Enum as SAEnum, Index
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
@@ -81,5 +81,9 @@ class ComplianceCheck(Base):
     )
 
     checklist: Mapped["ComplianceChecklist"] = relationship(back_populates="checks")
+
+    auto_evaluate: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False, server_default="false"
+    )
 
     __table_args__ = (Index("ix_compliance_checks_checklist", "checklist_id"),)

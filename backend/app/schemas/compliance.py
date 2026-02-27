@@ -13,6 +13,7 @@ class CheckCreate(BaseModel):
     title: str
     description: str | None = None
     category: CheckCategory
+    auto_evaluate: bool = False
 
 
 class CheckUpdate(BaseModel):
@@ -20,6 +21,7 @@ class CheckUpdate(BaseModel):
     evidence_url: str | None = None
     notes: str | None = None
     assigned_to: uuid.UUID | None = None
+    auto_evaluate: bool | None = None
 
 
 class CheckResponse(BaseModel):
@@ -32,6 +34,7 @@ class CheckResponse(BaseModel):
     evidence_url: str | None = None
     notes: str | None = None
     assigned_to: uuid.UUID | None = None
+    auto_evaluate: bool = False
     updated_at: datetime
     created_at: datetime
 

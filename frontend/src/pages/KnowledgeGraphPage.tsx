@@ -15,6 +15,9 @@ import {
   GitBranch,
   Trash2,
   Filter,
+  Sparkles,
+  Link,
+  Pencil,
 } from "lucide-react";
 import { api } from "../lib/api";
 import type {
@@ -157,23 +160,44 @@ interface ForceEdge {
   relation_type: string;
 }
 
+interface ForceGraphProps {
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+  width: number;
+  height: number;
+  addEdgeMode: boolean;
+  edgeSource: string | null;
+  onNodeDoubleClick?: (
+    nodeId: string,
+    nodeName: string,
+    nodeType: string,
+  ) => void;
+  onNodeRightClick?: (nodeId: string, x: number, y: number) => void;
+  onNodeClickForEdge?: (nodeId: string) => void;
+  onBgClick?: () => void;
+}
+
 function ForceGraph({
   nodes: rawNodes,
   edges,
   width,
   height,
-}: {
-  nodes: GraphNode[];
-  edges: GraphEdge[];
-  width: number;
-  height: number;
-}) {
+  addEdgeMode,
+  edgeSource,
+  onNodeDoubleClick,
+  onNodeRightClick,
+  onNodeClickForEdge,
+  onBgClick,
+}: ForceGraphProps) {
   const nodesRef = useRef<ForceNode[]>([]);
   const pinnedRef = useRef<Set<string>>(new Set());
   const [renderTick, setRenderTick] = useState(0);
   const frameRef = useRef<number>(0);
   const [dragNode, setDragNode] = useState<string | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
+  // Track whether mouse moved during a click (to distinguish click vs drag)
+  const mouseMoveRef = useRef(false);
+  const mouseDownPosRef = useRef({ x: 0, y: 0 });
 
   // Pan / zoom
   const [zoom, setZoom] = useState(1);
@@ -345,13 +369,37 @@ function ForceGraph({
   const handleNodeMouseDown = (id: string) => (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    mouseMoveRef.current = false;
+    mouseDownPosRef.current = { x: e.clientX, y: e.clientY };
     setDragNode(id);
   };
 
+  // Double-click: open edit modal (not unpin)
   const handleNodeDblClick = (id: string) => (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    pinnedRef.current.delete(id);
+    const node = nodesRef.current.find((n) => n.id === id);
+    if (node && onNodeDoubleClick) {
+      onNodeDoubleClick(id, node.name, node.entity_type);
+    }
+  };
+
+  // Right-click: show context menu
+  const handleNodeRightClick = (id: string) => (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onNodeRightClick) {
+      onNodeRightClick(id, e.clientX, e.clientY);
+    }
+  };
+
+  // Node click (only fires when mouse didn't move — not a drag)
+  const handleNodeClick = (id: string) => (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (mouseMoveRef.current) return; // was a drag, not a click
+    if (addEdgeMode && onNodeClickForEdge) {
+      onNodeClickForEdge(id);
+    }
   };
 
   useEffect(() => {
@@ -360,6 +408,11 @@ function ForceGraph({
     const handleMove = (e: MouseEvent) => {
       const svg = svgRef.current;
       if (!svg) return;
+      const dx = e.clientX - mouseDownPosRef.current.x;
+      const dy = e.clientY - mouseDownPosRef.current.y;
+      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+        mouseMoveRef.current = true;
+      }
       const rect = svg.getBoundingClientRect();
       const node = nodesRef.current.find((n) => n.id === dragNode);
       if (node) {
@@ -395,14 +448,31 @@ function ForceGraph({
         panX: pan.x,
         panY: pan.y,
       };
+      mouseMoveRef.current = false;
+      mouseDownPosRef.current = { x: e.clientX, y: e.clientY };
     },
     [pan],
+  );
+
+  const handleSvgClick = useCallback(
+    (e: React.MouseEvent) => {
+      // Only fire if it was a clean click on the SVG background (not a drag, not a node)
+      if (e.target !== svgRef.current) return;
+      if (mouseMoveRef.current) return;
+      if (onBgClick) onBgClick();
+    },
+    [onBgClick],
   );
 
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
       const pd = panDrag.current;
       if (!pd.active) return;
+      const dx = e.clientX - mouseDownPosRef.current.x;
+      const dy = e.clientY - mouseDownPosRef.current.y;
+      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+        mouseMoveRef.current = true;
+      }
       setPan({
         x: pd.panX + (e.clientX - pd.startX),
         y: pd.panY + (e.clientY - pd.startY),
@@ -488,13 +558,23 @@ function ForceGraph({
           {Math.round(zoom * 100)}%
         </span>
       </div>
+      {/* Add edge mode hint */}
+      {addEdgeMode && (
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-10 bg-cyan-500/20 border border-cyan-500/50 rounded-md px-3 py-1.5 text-xs text-cyan-300 backdrop-blur-sm">
+          {edgeSource
+            ? "Now click target node to create relation"
+            : "Click source node to start edge"}
+        </div>
+      )}
       <div className="absolute bottom-2 right-2 z-10 text-[10px] text-gray-400 dark:text-gray-500">
-        Scroll to zoom · Drag to pan · Drag nodes to place · Dbl-click to unpin
+        Scroll to zoom · Drag to pan · Drag nodes to place · Dbl-click to edit ·
+        Right-click to delete
       </div>
       <svg
         ref={svgRef}
-        className="absolute inset-0 w-full h-full bg-gray-50 dark:bg-gray-800/30 rounded-lg cursor-grab active:cursor-grabbing"
+        className={`absolute inset-0 w-full h-full bg-gray-50 dark:bg-gray-800/30 rounded-lg ${addEdgeMode ? "cursor-crosshair" : "cursor-grab active:cursor-grabbing"}`}
         onMouseDown={handleSvgMouseDown}
+        onClick={handleSvgClick}
       >
         <g transform={`translate(${pan.x},${pan.y}) scale(${zoom})`}>
           {/* Edges */}
@@ -539,23 +619,51 @@ function ForceGraph({
           {/* Nodes */}
           {nodesRef.current.map((n) => {
             const isPinned = pinnedRef.current.has(n.id);
+            const isEdgeSource = edgeSource === n.id;
             const r = nodeRadius(n.id);
             const labelLen = n.name.length * 6.5 + 12;
+            const color = entityTypeColors[n.entity_type] || "#6b7280";
             return (
               <g
                 key={n.id}
                 onMouseDown={handleNodeMouseDown(n.id)}
                 onDoubleClick={handleNodeDblClick(n.id)}
-                style={{ cursor: dragNode === n.id ? "grabbing" : "grab" }}
+                onContextMenu={handleNodeRightClick(n.id)}
+                onClick={handleNodeClick(n.id)}
+                style={{
+                  cursor: addEdgeMode
+                    ? "pointer"
+                    : dragNode === n.id
+                      ? "grabbing"
+                      : "grab",
+                }}
               >
+                {/* Glow ring when selected as edge source */}
+                {isEdgeSource && (
+                  <circle
+                    cx={n.x}
+                    cy={n.y}
+                    r={r + 6}
+                    fill="none"
+                    stroke="#38bdf8"
+                    strokeWidth={2}
+                    strokeOpacity={0.8}
+                  />
+                )}
                 <circle
                   cx={n.x}
                   cy={n.y}
                   r={r}
-                  fill={entityTypeColors[n.entity_type] || "#6b7280"}
+                  fill={color}
                   fillOpacity={0.85}
-                  stroke={isPinned ? "#ffffff" : "rgba(255,255,255,0.3)"}
-                  strokeWidth={isPinned ? 3 : 1.5}
+                  stroke={
+                    isEdgeSource
+                      ? "#38bdf8"
+                      : isPinned
+                        ? "#ffffff"
+                        : "rgba(255,255,255,0.3)"
+                  }
+                  strokeWidth={isEdgeSource ? 2 : isPinned ? 3 : 1.5}
                 />
                 {/* Label background */}
                 <rect
@@ -795,7 +903,7 @@ export function KnowledgeGraphPage() {
   const [loading, setLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState("");
 
-  // Add entity form
+  // Add entity form (sidebar)
   const [addName, setAddName] = useState("");
   const [addType, setAddType] = useState<string>("concept");
   const [addDesc, setAddDesc] = useState("");
@@ -807,6 +915,203 @@ export function KnowledgeGraphPage() {
   const [relTargetId, setRelTargetId] = useState("");
   const [relType, setRelType] = useState<string>(RELATION_TYPES[0]);
   const [relLoading, setRelLoading] = useState(false);
+
+  // --- New: Add Edge mode (click-source then click-target on graph) ---
+  const [addEdgeMode, setAddEdgeMode] = useState(false);
+  const [edgeSource, setEdgeSource] = useState<string | null>(null);
+  // When both source+target selected from graph, pre-fill and open relation modal
+  const handleNodeClickForEdge = useCallback(
+    (nodeId: string) => {
+      if (!edgeSource) {
+        setEdgeSource(nodeId);
+      } else if (edgeSource === nodeId) {
+        // Clicked same node — deselect
+        setEdgeSource(null);
+      } else {
+        // Have both — open relation modal pre-filled
+        setRelSourceId(edgeSource);
+        setRelTargetId(nodeId);
+        setEdgeSource(null);
+        setAddEdgeMode(false);
+        setRelationModalOpen(true);
+      }
+    },
+    [edgeSource],
+  );
+
+  // --- New: Edit entity modal ---
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editEntityId, setEditEntityId] = useState<string>("");
+  const [editName, setEditName] = useState("");
+  const [editType, setEditType] = useState("concept");
+  const [editDesc, setEditDesc] = useState("");
+  const [editLoading, setEditLoading] = useState(false);
+
+  const handleOpenEditModal = useCallback(
+    (nodeId: string, nodeName: string, nodeType: string) => {
+      const entity = entities.find((e) => e.id === nodeId);
+      setEditEntityId(nodeId);
+      setEditName(nodeName);
+      setEditType(nodeType);
+      setEditDesc(entity?.description ?? "");
+      setEditModalOpen(true);
+    },
+    [entities],
+  );
+
+  const handleEditEntity = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editName.trim()) {
+      toast("Entity name is required.", "error");
+      return;
+    }
+    setEditLoading(true);
+    try {
+      const updated = await api.patch<KnowledgeEntity>(
+        `/projects/${projectId}/knowledge/entities/${editEntityId}`,
+        {
+          name: editName.trim(),
+          entity_type: editType,
+          description: editDesc.trim() || null,
+        },
+      );
+      // Optimistic update in entities list and graph
+      setEntities((prev) =>
+        prev.map((ent) =>
+          ent.id === editEntityId ? { ...ent, ...updated } : ent,
+        ),
+      );
+      setGraphData((prev) => ({
+        ...prev,
+        nodes: prev.nodes.map((n) =>
+          n.id === editEntityId
+            ? { ...n, name: updated.name, entity_type: updated.entity_type }
+            : n,
+        ),
+      }));
+      setEditModalOpen(false);
+      toast("Entity updated!", "success");
+    } catch (err) {
+      const msg =
+        err instanceof Error ? err.message : "Failed to update entity";
+      toast(msg, "error");
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  // --- New: Context menu (right-click on graph node) ---
+  const [contextMenu, setContextMenu] = useState<{
+    nodeId: string;
+    x: number;
+    y: number;
+  } | null>(null);
+
+  // Close context menu on click anywhere
+  useEffect(() => {
+    if (!contextMenu) return;
+    const handler = () => setContextMenu(null);
+    window.addEventListener("click", handler);
+    return () => window.removeEventListener("click", handler);
+  }, [contextMenu]);
+
+  const handleNodeRightClick = useCallback(
+    (nodeId: string, x: number, y: number) => {
+      setContextMenu({ nodeId, x, y });
+    },
+    [],
+  );
+
+  // --- New: Extract from conversation modal ---
+  const [extractModalOpen, setExtractModalOpen] = useState(false);
+  const [extractText, setExtractText] = useState("");
+  const [extractLoading, setExtractLoading] = useState(false);
+  const [extractPreview, setExtractPreview] = useState<{
+    entities: Array<{ name: string; type: string; description?: string }>;
+    relations: Array<{ source: string; target: string; type: string }>;
+  } | null>(null);
+  const [importLoading, setImportLoading] = useState(false);
+
+  const handleExtract = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!extractText.trim()) return;
+    setExtractLoading(true);
+    try {
+      const result = await api.post<{
+        entities: Array<{ name: string; type: string; description?: string }>;
+        relations: Array<{ source: string; target: string; type: string }>;
+      }>(`/projects/${projectId}/knowledge/extract`, {
+        text: extractText.trim(),
+      });
+      setExtractPreview(result);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Extraction failed";
+      toast(msg, "error");
+    } finally {
+      setExtractLoading(false);
+    }
+  };
+
+  const handleImportExtracted = async () => {
+    if (!extractPreview) return;
+    setImportLoading(true);
+    try {
+      // Create entities first, collect name→id map
+      const nameToId = new Map<string, string>();
+      for (const ent of extractPreview.entities) {
+        try {
+          const created = await api.post<KnowledgeEntity>(
+            `/projects/${projectId}/knowledge/entities`,
+            {
+              name: ent.name,
+              entity_type: ent.type || "concept",
+              description: ent.description ?? null,
+            },
+          );
+          nameToId.set(ent.name, created.id);
+          setEntities((prev) => [created, ...prev]);
+        } catch {
+          // entity may already exist, try to find it
+          const existing = entities.find(
+            (e) => e.name.toLowerCase() === ent.name.toLowerCase(),
+          );
+          if (existing) nameToId.set(ent.name, existing.id);
+        }
+      }
+      // Create relations
+      for (const rel of extractPreview.relations) {
+        const srcId = nameToId.get(rel.source);
+        const tgtId = nameToId.get(rel.target);
+        if (srcId && tgtId) {
+          try {
+            const created = await api.post<KnowledgeRelation>(
+              `/projects/${projectId}/knowledge/relations`,
+              {
+                source_id: srcId,
+                target_id: tgtId,
+                relation_type: rel.type || "relates_to",
+              },
+            );
+            setRelations((prev) => [created, ...prev]);
+          } catch {
+            // silently skip duplicate relations
+          }
+        }
+      }
+      toast(
+        `Imported ${extractPreview.entities.length} entities and ${extractPreview.relations.length} relations!`,
+        "success",
+      );
+      setExtractModalOpen(false);
+      setExtractText("");
+      setExtractPreview(null);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Import failed";
+      toast(msg, "error");
+    } finally {
+      setImportLoading(false);
+    }
+  };
 
   // Graph state
   const [graphData, setGraphData] = useState<GraphData>({
@@ -912,6 +1217,11 @@ export function KnowledgeGraphPage() {
     try {
       await api.delete(`/projects/${projectId}/knowledge/entities/${id}`);
       setEntities((prev) => prev.filter((e) => e.id !== id));
+      // Also remove from graph
+      setGraphData((prev) => ({
+        nodes: prev.nodes.filter((n) => n.id !== id),
+        edges: prev.edges.filter((e) => e.source !== id && e.target !== id),
+      }));
       toast("Entity deleted.", "success");
     } catch (err) {
       const msg =
@@ -942,6 +1252,26 @@ export function KnowledgeGraphPage() {
         },
       );
       setRelations((prev) => [rel, ...prev]);
+      // Also add edge to current graph if both nodes are visible
+      setGraphData((prev) => {
+        const srcVisible = prev.nodes.some((n) => n.id === relSourceId);
+        const tgtVisible = prev.nodes.some((n) => n.id === relTargetId);
+        if (srcVisible && tgtVisible) {
+          return {
+            ...prev,
+            edges: [
+              ...prev.edges,
+              {
+                source: rel.source_id,
+                target: rel.target_id,
+                relation_type: rel.relation_type,
+                weight: null,
+              },
+            ],
+          };
+        }
+        return prev;
+      });
       setRelationModalOpen(false);
       setRelSourceId("");
       setRelTargetId("");
@@ -1076,6 +1406,18 @@ export function KnowledgeGraphPage() {
               <ArrowLeft className="w-4 h-4" />
               Back
             </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                setExtractText("");
+                setExtractPreview(null);
+                setExtractModalOpen(true);
+              }}
+            >
+              <Sparkles className="w-4 h-4" />
+              Extract
+            </Button>
             <Button size="sm" onClick={() => setRelationModalOpen(true)}>
               <GitBranch className="w-4 h-4" />
               Add Relation
@@ -1157,12 +1499,28 @@ export function KnowledgeGraphPage() {
                         {relativeTime(entity.created_at)}
                       </p>
                     </div>
-                    <button
-                      onClick={() => handleDeleteEntity(entity.id)}
-                      className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-400 hover:text-red-500 shrink-0"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        onClick={() =>
+                          handleOpenEditModal(
+                            entity.id,
+                            entity.name,
+                            entity.entity_type,
+                          )
+                        }
+                        className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                        title="Edit entity"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteEntity(entity.id)}
+                        className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-400 hover:text-red-500 shrink-0"
+                        title="Delete entity"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 </Card>
               ))
@@ -1248,8 +1606,22 @@ export function KnowledgeGraphPage() {
               Show All
             </Button>
 
+            {/* Add Edge toggle */}
+            <Button
+              size="sm"
+              variant={addEdgeMode ? "primary" : "secondary"}
+              onClick={() => {
+                setAddEdgeMode((m) => !m);
+                setEdgeSource(null);
+              }}
+              title="Toggle add-edge mode: click source then target node"
+            >
+              <Link className="w-3.5 h-3.5" />
+              {addEdgeMode ? "Cancel Edge" : "Add Edge"}
+            </Button>
+
             {/* View mode toggle */}
-            <div className="flex items-center ml-3">
+            <div className="flex items-center ml-1">
               <button
                 onClick={() => setViewMode("graph")}
                 className={`px-3 py-1 text-xs font-medium rounded-l-md border ${viewMode === "graph" ? "bg-teal/10 text-teal border-teal relative z-10" : "text-gray-400 border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
@@ -1280,6 +1652,15 @@ export function KnowledgeGraphPage() {
                 edges={graphData.edges}
                 width={graphSize.width}
                 height={graphSize.height}
+                addEdgeMode={addEdgeMode}
+                edgeSource={edgeSource}
+                onNodeDoubleClick={handleOpenEditModal}
+                onNodeRightClick={handleNodeRightClick}
+                onNodeClickForEdge={handleNodeClickForEdge}
+                onBgClick={() => {
+                  // Clicking empty canvas: cancel edge mode selection
+                  if (addEdgeMode) setEdgeSource(null);
+                }}
               />
             </div>
           )}
@@ -1305,6 +1686,40 @@ export function KnowledgeGraphPage() {
           )}
         </div>
       </div>
+
+      {/* Context menu (right-click on graph node) */}
+      {contextMenu && (
+        <div
+          className="fixed z-50 bg-gray-900 border border-gray-700 rounded-md shadow-xl py-1 min-w-[140px]"
+          style={{ top: contextMenu.y, left: contextMenu.x }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            className="w-full text-left px-3 py-1.5 text-sm text-gray-300 hover:bg-white/10 flex items-center gap-2"
+            onClick={() => {
+              const node = graphData.nodes.find(
+                (n) => n.id === contextMenu.nodeId,
+              );
+              if (node)
+                handleOpenEditModal(node.id, node.name, node.entity_type);
+              setContextMenu(null);
+            }}
+          >
+            <Pencil className="w-3.5 h-3.5 text-gray-400" />
+            Edit entity
+          </button>
+          <button
+            className="w-full text-left px-3 py-1.5 text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2"
+            onClick={() => {
+              handleDeleteEntity(contextMenu.nodeId);
+              setContextMenu(null);
+            }}
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            Delete node
+          </button>
+        </div>
+      )}
 
       {/* Add Relation Modal */}
       <Modal
@@ -1385,6 +1800,202 @@ export function KnowledgeGraphPage() {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Edit Entity Modal */}
+      <Modal
+        open={editModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        title="Edit Entity"
+      >
+        <form onSubmit={handleEditEntity} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Name <span className="text-red-500">*</span>
+            </label>
+            <Input
+              type="text"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              placeholder="Entity name"
+              autoFocus
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Type
+            </label>
+            <Select
+              value={editType}
+              onChange={(e) => setEditType(e.target.value)}
+            >
+              {Object.keys(entityTypeColors).map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Description
+            </label>
+            <textarea
+              value={editDesc}
+              onChange={(e) => setEditDesc(e.target.value)}
+              placeholder="Optional description..."
+              rows={3}
+              className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 resize-none"
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setEditModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              loading={editLoading}
+              disabled={!editName.trim()}
+            >
+              <Pencil className="w-4 h-4" />
+              Save Changes
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Extract from Conversation Modal */}
+      <Modal
+        open={extractModalOpen}
+        onClose={() => {
+          setExtractModalOpen(false);
+          setExtractPreview(null);
+          setExtractText("");
+        }}
+        title="Extract from Conversation"
+      >
+        {!extractPreview ? (
+          <form onSubmit={handleExtract} className="space-y-4">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Paste a conversation, document, or any text. AI will extract
+              entities and relationships automatically.
+            </p>
+            <textarea
+              value={extractText}
+              onChange={(e) => setExtractText(e.target.value)}
+              placeholder="Paste conversation text here..."
+              rows={8}
+              className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 resize-none font-mono"
+            />
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setExtractModalOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                loading={extractLoading}
+                disabled={!extractText.trim()}
+              >
+                <Sparkles className="w-4 h-4" />
+                Extract
+              </Button>
+            </div>
+          </form>
+        ) : (
+          <div className="space-y-4">
+            <div className="rounded-md bg-emerald-500/10 border border-emerald-500/30 p-3 text-sm text-emerald-400">
+              Found <strong>{extractPreview.entities.length}</strong> entities
+              and <strong>{extractPreview.relations.length}</strong> relations
+            </div>
+
+            {extractPreview.entities.length > 0 && (
+              <div>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+                  Entities
+                </p>
+                <div className="space-y-1 max-h-40 overflow-y-auto">
+                  {extractPreview.entities.map((ent, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center gap-2 text-sm py-1 px-2 rounded bg-white/5"
+                    >
+                      <span
+                        className="w-2 h-2 rounded-full shrink-0"
+                        style={{
+                          backgroundColor:
+                            entityTypeColors[ent.type] || "#6b7280",
+                        }}
+                      />
+                      <span className="font-medium text-gray-200">
+                        {ent.name}
+                      </span>
+                      <span className="text-xs text-gray-500 ml-auto">
+                        {ent.type}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {extractPreview.relations.length > 0 && (
+              <div>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+                  Relations
+                </p>
+                <div className="space-y-1 max-h-32 overflow-y-auto">
+                  {extractPreview.relations.map((rel, i) => (
+                    <div
+                      key={i}
+                      className="text-xs text-gray-400 py-1 px-2 rounded bg-white/5 font-mono"
+                    >
+                      {rel.source}{" "}
+                      <span className="text-cyan-400">—{rel.type}→</span>{" "}
+                      {rel.target}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setExtractPreview(null)}
+              >
+                Back
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  setExtractModalOpen(false);
+                  setExtractPreview(null);
+                  setExtractText("");
+                }}
+              >
+                Discard
+              </Button>
+              <Button
+                type="button"
+                loading={importLoading}
+                onClick={handleImportExtracted}
+              >
+                <Plus className="w-4 h-4" />
+                Import All
+              </Button>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );

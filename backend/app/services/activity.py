@@ -47,4 +47,11 @@ async def log_activity(
     except Exception:
         pass  # Never let Redis failure break a write
 
+    # Reactive compliance re-evaluation: flag auto_evaluate checks when
+    # canvas components are added or removed.
+    if entity_type == "canvas_component" and action in ("created", "deleted"):
+        import asyncio
+        from app.services.compliance import reevaluate_architecture_compliance
+        asyncio.create_task(reevaluate_architecture_compliance(project_id, db))
+
     return activity

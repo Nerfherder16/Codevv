@@ -221,4 +221,15 @@ export const api = {
     request<{ results: Array<{ type: string; id: string; title: string; subtitle?: string }>; count: number }>(
       `/projects/${projectId}/search?q=${encodeURIComponent(q)}`
     ),
+
+  references: {
+    list: (projectId: string, entityType: string, entityId: string) =>
+      request<import('../types').Reference[]>(
+        `/projects/${projectId}/references?entity_type=${entityType}&entity_id=${entityId}`
+      ),
+    create: (projectId: string, data: { source_type: string; source_id: string; target_type: string; target_id: string; relation?: string }) =>
+      request<import('../types').Reference>(`/projects/${projectId}/references`, { method: 'POST', body: JSON.stringify(data) }),
+    delete: (projectId: string, referenceId: string) =>
+      request<void>(`/projects/${projectId}/references/${referenceId}`, { method: 'DELETE' }),
+  },
 };
