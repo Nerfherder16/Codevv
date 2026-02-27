@@ -12,6 +12,7 @@ from app.schemas.canvas import (
     CanvasResponse, CanvasDetailResponse, ComponentResponse,
 )
 from app.api.routes.projects import get_project_with_access
+from app.services.activity import log_activity
 import uuid
 
 router = APIRouter(prefix="/projects/{project_id}/canvases", tags=["canvases"])
@@ -35,6 +36,12 @@ async def create_canvas(
     )
     db.add(canvas)
     await db.flush()
+    try:
+        await log_activity(project_id=project_id, actor_id=user.id,
+            action="created", entity_type="canvas",
+            entity_id=str(canvas.id), entity_name=canvas.name, db=db)
+    except Exception:
+        pass
     return CanvasResponse(
         id=canvas.id, project_id=canvas.project_id, name=canvas.name,
         yjs_doc_id=canvas.yjs_doc_id, created_by=canvas.created_by,
@@ -146,4 +153,10 @@ async def add_component(
     )
     db.add(component)
     await db.flush()
+    try:
+        await log_activity(project_id=project_id, actor_id=user.id,
+            action="created", entity_type="canvas_component",
+            entity_id=str(component.id), entity_name=component.name, db=db)
+    except Exception:
+        pass
     return ComponentResponse.model_validate(component)

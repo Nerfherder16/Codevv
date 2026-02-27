@@ -1,5 +1,5 @@
 from app.models.user import User
-from app.models.project import Project, ProjectMember
+from app.models.project import Project, ProjectMember, ProjectPersona
 from app.models.canvas import Canvas, CanvasComponent
 from app.models.idea import Idea, IdeaVote, IdeaComment
 from app.models.scaffold import ScaffoldJob
@@ -14,11 +14,15 @@ from app.models.conversation import Conversation, ConversationMessage
 from app.models.claude_credential import ClaudeCredential
 from app.models.workspace import Workspace
 from app.models.terminal_session import TerminalSession
-
+from app.models.project_invite import ProjectInvite, InviteStatus  # noqa: F401
+from app.models.password_reset import PasswordResetToken  # noqa: F401
+from app.models.organization import Organization, OrgMembership, OrgRole, OrgMemberStatus  # noqa: F401
+from app.models.activity import Activity  # noqa: F401
 __all__ = [
     "User",
     "Project",
     "ProjectMember",
+    "ProjectPersona",
     "Canvas",
     "CanvasComponent",
     "Idea",
@@ -41,4 +45,12 @@ __all__ = [
     "ClaudeCredential",
     "Workspace",
     "TerminalSession",
+    "ProjectInvite",
+    "InviteStatus",
+    "PasswordResetToken",
+    "Organization",
+    "OrgMembership",
+    "OrgRole",
+    "OrgMemberStatus",
+    "Activity",
 ]

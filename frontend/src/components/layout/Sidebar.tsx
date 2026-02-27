@@ -17,8 +17,10 @@ import {
   Shield,
   FileText,
   Terminal,
+  MessageSquare,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
+import { useEventStreamContext } from "../../contexts/EventStreamContext";
 
 interface NavItem {
   to: string;
@@ -37,6 +39,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Core",
     items: [
       { to: "", icon: LayoutDashboard, label: "Overview", end: true },
+      { to: "chat", icon: MessageSquare, label: "AI Chat" },
       { to: "canvas", icon: Pencil, label: "Canvas" },
       { to: "ideas", icon: Lightbulb, label: "Idea Vault" },
       { to: "knowledge", icon: Share2, label: "Knowledge Graph" },
@@ -75,6 +78,8 @@ export function Sidebar() {
     () => localStorage.getItem("bh-sidebar") === "collapsed",
   );
   const { projectId } = useParams();
+  const { badgeCounts } = useEventStreamContext();
+  const overviewBadge = projectId ? (badgeCounts[projectId] ?? 0) : 0;
   const basePath = projectId ? `/projects/${projectId}` : "/";
 
   const toggleCollapse = () => {
@@ -206,6 +211,11 @@ export function Sidebar() {
                     <item.icon className="w-5 h-5 shrink-0" />
                     {!collapsed && (
                       <span className="truncate">{item.label}</span>
+                    )}
+                    {item.end && overviewBadge > 0 && (
+                      <span className="ml-auto min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-[var(--accent-primary)] text-[var(--bg-page)] text-[10px] font-bold px-1">
+                        {overviewBadge > 99 ? '99+' : overviewBadge}
+                      </span>
                     )}
                   </>
                 )}

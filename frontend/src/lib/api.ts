@@ -54,4 +54,18 @@ export const api = {
     claudeStatus: (orgId: string) =>
       request<{ connected: boolean; valid: boolean; reason: string | null; subscription: string | null }>(`/orgs/${orgId}/claude-status`),
   },
+
+  activity: {
+    list: (projectId: string, params?: { entity_type?: string; actor_id?: string; limit?: number; offset?: number }) => {
+      const qs = new URLSearchParams();
+      if (params?.entity_type) qs.set('entity_type', params.entity_type);
+      if (params?.actor_id) qs.set('actor_id', params.actor_id);
+      if (params?.limit != null) qs.set('limit', String(params.limit));
+      if (params?.offset != null) qs.set('offset', String(params.offset));
+      const q = qs.toString() ? `?${qs.toString()}` : '';
+      return request<import('../types').Activity[]>(`/projects/${projectId}/activity${q}`);
+    },
+    summary: (projectId: string) =>
+      request<import('../types').ActivitySummary>(`/projects/${projectId}/activity/summary`),
+  },
 };

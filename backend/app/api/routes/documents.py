@@ -5,6 +5,7 @@ from app.core.security import get_current_user
 from app.models.user import User
 from app.models.project import ProjectRole
 from app.api.routes.projects import get_project_with_access
+from app.services.activity import log_activity
 from app.services.recall import _recall_post, browse_recall
 import uuid
 import io
@@ -83,6 +84,12 @@ async def upload_document(
         },
     )
 
+    try:
+        await log_activity(project_id=project_id, actor_id=user.id,
+            action="uploaded", entity_type="document",
+            entity_id=str(result.get("id", "")), entity_name=file.filename, db=db)
+    except Exception:
+        pass
     return {
         "filename": file.filename,
         "size": len(content_bytes),

@@ -22,6 +22,7 @@ from app.schemas.compliance import (
     LaunchReadinessResponse,
 )
 from app.api.routes.projects import get_project_with_access
+from app.services.activity import log_activity
 import uuid
 
 router = APIRouter(prefix="/projects/{project_id}/compliance", tags=["compliance"])
@@ -227,4 +228,11 @@ async def update_check(
         check.assigned_to = req.assigned_to
     check.updated_by = user.id
     await db.flush()
+    if req.status is not None:
+        try:
+            await log_activity(project_id=project_id, actor_id=user.id,
+                action=f"check_{req.status.value}", entity_type="compliance_check",
+                entity_id=str(check.id), entity_name=check.title, db=db)
+        except Exception:
+            pass
     return CheckResponse.model_validate(check)

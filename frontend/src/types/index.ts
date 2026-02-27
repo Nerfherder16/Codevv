@@ -537,3 +537,31 @@ export interface ProjectInvite {
   created_at: string;
   expires_at: string;
 }
+
+// Activity feed
+export interface Activity {
+  id: string;
+  project_id: string;
+  actor_id: string | null;
+  actor_name: string | null;
+  action: string;
+  entity_type: string;
+  entity_id: string;
+  entity_name: string | null;
+  details: Record<string, unknown> | null;
+  created_at: string;
+}
+
+export interface ActivitySummary {
+  total: number;
+  by_type: Record<string, number>;
+  by_action: Record<string, number>;
+}
+
+// Real-time events (WebSocket /ws/events)
+export interface AppEvent {
+  type: string;
+  payload: Record<string, unknown>;
+  actor_id: string | null;
+  timestamp: string;
+}

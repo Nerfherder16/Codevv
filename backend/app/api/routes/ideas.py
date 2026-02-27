@@ -18,6 +18,7 @@ from app.schemas.idea import (
     IdeaSearchRequest,
 )
 from app.api.routes.projects import get_project_with_access
+from app.services.activity import log_activity
 from app.services.embedding import get_embedding
 import uuid
 
@@ -85,6 +86,12 @@ async def create_idea(
         pass  # Knowledge propagation is best-effort
 
     await db.refresh(idea, ["votes", "comments"])
+    try:
+        await log_activity(project_id=project_id, actor_id=user.id,
+            action="created", entity_type="idea",
+            entity_id=str(idea.id), entity_name=idea.title, db=db)
+    except Exception:
+        pass
     return build_idea_response(idea)
 
 
@@ -175,6 +182,13 @@ async def update_idea(
             pass
 
     await db.flush()
+    action = f"status_changed:{req.status}" if req.status is not None else "updated"
+    try:
+        await log_activity(project_id=project_id, actor_id=user.id,
+            action=action, entity_type="idea",
+            entity_id=str(idea.id), entity_name=idea.title, db=db)
+    except Exception:
+        pass
     return build_idea_response(idea)
 
 

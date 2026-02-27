@@ -24,6 +24,8 @@ from app.api.routes import (
     documents,
     workspaces,
     ws_terminal,
+    activity,
+    events,
 )
 import structlog
 
@@ -182,6 +184,10 @@ app.include_router(orgs.router, prefix="/api/orgs")
 from app.api.routes import ws_proxy  # noqa: E402
 
 app.include_router(ws_proxy.router)
+
+# Real-time event stream + activity feed
+app.include_router(activity.router, prefix="/api")
+app.include_router(events.router)
 
 
 @app.get("/health")
