@@ -6,6 +6,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { ToastProvider } from "./contexts/ToastContext";
 import { AIChatProvider } from "./contexts/AIChatContext";
+import { EventStreamProvider } from "./contexts/EventStreamContext";
 import App from "./App";
 import "./index.css";
 
@@ -15,11 +16,13 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       <ThemeProvider>
         <ToastProvider>
           <AuthProvider>
-            <AIChatProvider>
-              <AnimatePresence mode="wait">
-                <App />
-              </AnimatePresence>
-            </AIChatProvider>
+            <EventStreamProvider>
+              <AIChatProvider>
+                <AnimatePresence mode="wait">
+                  <App />
+                </AnimatePresence>
+              </AIChatProvider>
+            </EventStreamProvider>
           </AuthProvider>
         </ToastProvider>
       </ThemeProvider>

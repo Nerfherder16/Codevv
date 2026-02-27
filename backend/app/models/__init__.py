@@ -69,3 +69,4 @@ __all__ = [
 ]
 
 from app.models.session import Session as CollabSession, SessionMember, SessionType, SessionStatus, SessionMemberRole  # noqa: F401
+from app.models.recall_pairing import RecallPairing  # noqa: F401

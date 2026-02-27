@@ -51,6 +51,15 @@ async def lifespan(app: FastAPI):
     logger.info("startup", app=settings.app_name, env=settings.environment)
     await init_db()
 
+    # Recall pairing
+    if settings.recall_url:
+        from app.services.recall_pairing import ensure_paired
+        paired = await ensure_paired(settings.recall_url)
+        if paired:
+            logger.info("recall.paired", url=settings.recall_url)
+        else:
+            logger.warning("recall.unavailable", url=settings.recall_url)
+
     # Add new columns to existing users table (create_all doesn't ALTER)
     from app.core.database import engine
     from sqlalchemy import text as _text

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 import {
   X,
   Send,
@@ -15,6 +15,8 @@ import {
   Minimize2,
   Columns,
   Paperclip,
+  Share2,
+  Users,
 } from "lucide-react";
 import { useAIChat } from "../../contexts/AIChatContext";
 import { useSSE } from "../../hooks/useSSE";
@@ -41,6 +43,7 @@ type AuthStatus = {
 
 export function AIChatPanel() {
   const { projectId } = useParams<{ projectId: string }>();
+  const location = useLocation();
   const {
     isOpen,
     close,
@@ -68,6 +71,11 @@ export function AIChatPanel() {
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
   const [authLoading, setAuthLoading] = useState(false);
+  const [convTab, setConvTab] = useState<"mine" | "team">("mine");
+  const [sharedConversations, setSharedConversations] = useState<
+    Array<{ id: string; title: string; shared_at: string | null; shared_by: string | null; user_id: string; message_count: number }>
+  >([]);
+  const [sharingConvId, setSharingConvId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -118,6 +126,40 @@ export function AIChatPanel() {
   useEffect(() => {
     if (isOpen && authStatus?.authenticated) fetchConversations();
   }, [isOpen, authStatus, fetchConversations]);
+
+  const fetchSharedConversations = useCallback(async () => {
+    if (!projectId) return;
+    try {
+      const convs = await api.conversations.listShared(projectId);
+      setSharedConversations(convs);
+    } catch {
+      // ignore
+    }
+  }, [projectId]);
+
+  useEffect(() => {
+    if (isOpen && authStatus?.authenticated && convTab === "team") {
+      fetchSharedConversations();
+    }
+  }, [isOpen, authStatus, convTab, fetchSharedConversations]);
+
+  const handleShareConversation = useCallback(
+    async (convId: string, e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (!projectId || sharingConvId) return;
+      setSharingConvId(convId);
+      try {
+        await api.conversations.share(projectId, convId);
+        await fetchConversations();
+        await fetchSharedConversations();
+      } catch {
+        // ignore
+      } finally {
+        setSharingConvId(null);
+      }
+    },
+    [projectId, sharingConvId, fetchConversations, fetchSharedConversations],
+  );
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -206,7 +248,7 @@ export function AIChatPanel() {
     addMessage(assistantMsg);
 
     setInput("");
-    send(text, currentContext || undefined, currentModel);
+    send(text, { ...currentContext, page: location.pathname }, currentModel);
   }, [input, isStreaming, addMessage, send, currentContext, currentModel]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -377,41 +419,124 @@ export function AIChatPanel() {
                   <MessageSquare className="w-4 h-4" />
                 </button>
                 {convDropdownOpen && (
-                  <div className="absolute top-full right-0 mt-1 w-72 bg-white dark:bg-gray-900/95 dark:backdrop-blur-xl border border-gray-200 dark:border-white/[0.08] rounded-xl shadow-lg dark:shadow-black/40 z-50 overflow-hidden max-h-80 flex flex-col">
-                    <button
-                      onClick={handleNewConversation}
-                      className="flex items-center gap-2 w-full px-3 py-2.5 text-left text-sm font-medium text-teal hover:bg-teal/10 border-b border-gray-100 dark:border-white/[0.04] transition-colors"
-                    >
-                      <Plus className="w-4 h-4" />
-                      New Conversation
-                    </button>
+                  <div className="absolute top-full right-0 mt-1 w-80 bg-white dark:bg-gray-900/95 dark:backdrop-blur-xl border border-gray-200 dark:border-white/[0.08] rounded-xl shadow-lg dark:shadow-black/40 z-50 overflow-hidden max-h-96 flex flex-col">
+                    {/* Tab bar */}
+                    <div className="flex items-center border-b border-gray-100 dark:border-white/[0.04]">
+                      <button
+                        onClick={handleNewConversation}
+                        className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-teal hover:bg-teal/10 transition-colors border-r border-gray-100 dark:border-white/[0.04]"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        New
+                      </button>
+                      <button
+                        onClick={() => setConvTab("mine")}
+                        className={`flex items-center gap-1.5 flex-1 justify-center px-3 py-2 text-xs font-medium transition-colors ${
+                          convTab === "mine"
+                            ? "text-teal bg-teal/5"
+                            : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/[0.03]"
+                        }`}
+                      >
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        Mine
+                      </button>
+                      <button
+                        onClick={() => setConvTab("team")}
+                        className={`flex items-center gap-1.5 flex-1 justify-center px-3 py-2 text-xs font-medium transition-colors ${
+                          convTab === "team"
+                            ? "text-teal bg-teal/5"
+                            : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/[0.03]"
+                        }`}
+                      >
+                        <Users className="w-3.5 h-3.5" />
+                        Team
+                      </button>
+                    </div>
+
+                    {/* Conversation list */}
                     <div className="overflow-y-auto flex-1">
-                      {conversations.length === 0 ? (
-                        <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-4">
-                          No conversations yet
-                        </p>
-                      ) : (
-                        conversations.map((conv) => (
-                          <button
-                            key={conv.id}
-                            onClick={() => handleLoadConversation(conv.id)}
-                            className={`w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-white/[0.05] transition-colors ${
-                              conv.id === conversationId
-                                ? "bg-teal/10 dark:bg-teal/10"
-                                : ""
-                            }`}
-                          >
-                            <p className="text-sm text-gray-900 dark:text-white truncate">
-                              {conv.title}
-                            </p>
-                            <div className="flex items-center gap-2 mt-0.5">
-                              <Clock className="w-3 h-3 text-gray-400" />
-                              <span className="text-[10px] text-gray-400 dark:text-gray-500">
-                                {conv.message_count} messages
-                              </span>
+                      {convTab === "mine" ? (
+                        conversations.length === 0 ? (
+                          <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-4">
+                            No conversations yet
+                          </p>
+                        ) : (
+                          conversations.map((conv) => (
+                            <div
+                              key={conv.id}
+                              className={`group flex items-center gap-1 pr-1 hover:bg-gray-50 dark:hover:bg-white/[0.05] transition-colors ${
+                                conv.id === conversationId
+                                  ? "bg-teal/10 dark:bg-teal/10"
+                                  : ""
+                              }`}
+                            >
+                              <button
+                                onClick={() => handleLoadConversation(conv.id)}
+                                className="flex-1 text-left px-3 py-2 min-w-0"
+                              >
+                                <p className="text-sm text-gray-900 dark:text-white truncate">
+                                  {conv.title}
+                                </p>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                  <Clock className="w-3 h-3 text-gray-400 shrink-0" />
+                                  <span className="text-[10px] text-gray-400 dark:text-gray-500">
+                                    {conv.message_count} messages
+                                  </span>
+                                  {(conv as { shared?: boolean }).shared && (
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-teal/10 text-teal font-medium">
+                                      shared
+                                    </span>
+                                  )}
+                                </div>
+                              </button>
+                              <button
+                                onClick={(e) => handleShareConversation(conv.id, e)}
+                                disabled={sharingConvId === conv.id}
+                                className={`shrink-0 p-1.5 rounded-lg transition-colors opacity-0 group-hover:opacity-100 ${
+                                  (conv as { shared?: boolean }).shared
+                                    ? "text-teal hover:bg-teal/10"
+                                    : "text-gray-400 hover:bg-gray-100 dark:hover:bg-white/[0.06] hover:text-gray-600 dark:hover:text-gray-300"
+                                } disabled:opacity-40`}
+                                title={(conv as { shared?: boolean }).shared ? "Unshare with team" : "Share with team"}
+                              >
+                                <Share2 className="w-3.5 h-3.5" />
+                              </button>
                             </div>
-                          </button>
-                        ))
+                          ))
+                        )
+                      ) : (
+                        sharedConversations.length === 0 ? (
+                          <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-4">
+                            No shared conversations yet
+                          </p>
+                        ) : (
+                          sharedConversations.map((conv) => (
+                            <button
+                              key={conv.id}
+                              onClick={() => handleLoadConversation(conv.id)}
+                              className={`w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-white/[0.05] transition-colors ${
+                                conv.id === conversationId
+                                  ? "bg-teal/10 dark:bg-teal/10"
+                                  : ""
+                              }`}
+                            >
+                              <p className="text-sm text-gray-900 dark:text-white truncate">
+                                {conv.title}
+                              </p>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <Share2 className="w-3 h-3 text-teal shrink-0" />
+                                <span className="text-[10px] text-gray-400 dark:text-gray-500">
+                                  {conv.message_count} messages
+                                </span>
+                                {conv.shared_at && (
+                                  <span className="text-[10px] text-gray-400 dark:text-gray-500 truncate">
+                                    · {new Date(conv.shared_at).toLocaleDateString()}
+                                  </span>
+                                )}
+                              </div>
+                            </button>
+                          ))
+                        )
                       )}
                     </div>
                   </div>

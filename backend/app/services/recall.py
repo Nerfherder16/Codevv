@@ -4,23 +4,34 @@ from app.core.config import get_settings
 settings = get_settings()
 
 
+async def _get_headers() -> dict:
+    from app.services.recall_pairing import get_pairing_token
+    token = await get_pairing_token()
+    if token:
+        return {"X-API-Key": token}
+    return {}
+
+
 async def _recall_post(path: str, json: dict | None = None) -> dict:
+    headers = await _get_headers()
     async with httpx.AsyncClient(base_url=settings.recall_url, timeout=10.0) as client:
-        resp = await client.post(path, json=json or {})
+        resp = await client.post(path, json=json or {}, headers=headers)
         resp.raise_for_status()
         return resp.json()
 
 
 async def _recall_get(path: str, params: dict | None = None) -> dict:
+    headers = await _get_headers()
     async with httpx.AsyncClient(base_url=settings.recall_url, timeout=10.0) as client:
-        resp = await client.get(path, params=params)
+        resp = await client.get(path, params=params, headers=headers)
         resp.raise_for_status()
         return resp.json()
 
 
 async def _recall_delete(path: str) -> dict:
+    headers = await _get_headers()
     async with httpx.AsyncClient(base_url=settings.recall_url, timeout=10.0) as client:
-        resp = await client.delete(path)
+        resp = await client.delete(path, headers=headers)
         resp.raise_for_status()
         return resp.json()
 

@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import String, DateTime, Integer, Text, ForeignKey
+from sqlalchemy import String, DateTime, Integer, Text, ForeignKey, Boolean
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
@@ -31,6 +31,9 @@ class Conversation(Base):
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),
     )
+    shared: Mapped[bool] = mapped_column(Boolean, default=False)
+    shared_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    shared_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
 
     messages: Mapped[list["ConversationMessage"]] = relationship(
         back_populates="conversation",

@@ -11,6 +11,9 @@ class ConversationResponse(BaseModel):
     message_count: int
     created_at: datetime
     updated_at: datetime
+    shared: bool = False
+    shared_at: datetime | None = None
+    shared_by: str | None = None
 
     model_config = {"from_attributes": True}
 

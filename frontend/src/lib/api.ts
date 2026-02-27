@@ -205,7 +205,19 @@ export const api = {
       ),
   },
 
-  search: (projectId: string, q: string) =>
+  conversations: {
+    share: (projectId: string, convId: string) =>
+      request<{ id: string; shared: boolean; shared_at: string | null }>(
+        `/projects/${projectId}/conversations/${convId}/share`,
+        { method: 'PATCH' }
+      ),
+    listShared: (projectId: string) =>
+      request<Array<{ id: string; title: string; shared_at: string | null; shared_by: string | null; user_id: string; message_count: number }>>(
+        `/projects/${projectId}/conversations/shared`
+      ),
+  },
+
+    search: (projectId: string, q: string) =>
     request<{ results: Array<{ type: string; id: string; title: string; subtitle?: string }>; count: number }>(
       `/projects/${projectId}/search?q=${encodeURIComponent(q)}`
     ),
