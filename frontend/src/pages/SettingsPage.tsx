@@ -3,8 +3,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   Settings,
-  Users,
-  UserPlus,
   Trash2,
   Moon,
   Sun,
@@ -12,7 +10,7 @@ import {
   Save,
 } from "lucide-react";
 import { api } from "../lib/api";
-import type { ProjectDetail, ProjectMember, ProjectRole } from "../types";
+import type { ProjectDetail } from "../types";
 import { useToast } from "../contexts/ToastContext";
 import { useTheme } from "../contexts/ThemeContext";
 import { Button } from "../components/common/Button";
@@ -20,12 +18,9 @@ import { Card } from "../components/common/Card";
 import { PageHeader } from "../components/common/PageHeader";
 import { PageLoading } from "../components/common/LoadingSpinner";
 import { Modal } from "../components/common/Modal";
-import { Input, TextArea, Select } from "../components/common/Input";
-import { ROLE_COLORS } from "../lib/constants";
-
-const ROLES: ProjectRole[] = ["owner", "editor", "viewer"];
-
-// Using ROLE_COLORS from constants
+import { Input, TextArea } from "../components/common/Input";
+import { MembersSection } from "../components/settings/MembersSection";
+import { PendingInvites } from "../components/settings/PendingInvites";
 
 export function SettingsPage() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -41,11 +36,8 @@ export function SettingsPage() {
   const [editDesc, setEditDesc] = useState("");
   const [saving, setSaving] = useState(false);
 
-  // Add member modal
-  const [addMemberOpen, setAddMemberOpen] = useState(false);
-  const [memberEmail, setMemberEmail] = useState("");
-  const [memberRole, setMemberRole] = useState<ProjectRole>("editor");
-  const [addingMember, setAddingMember] = useState(false);
+  // Invite refresh trigger
+  const [inviteRefreshKey, setInviteRefreshKey] = useState(0);
 
   // Archive confirmation
   const [archiveModalOpen, setArchiveModalOpen] = useState(false);
@@ -101,37 +93,6 @@ export function SettingsPage() {
       toast(msg, "error");
     } finally {
       setSaving(false);
-    }
-  };
-
-  const handleAddMember = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!memberEmail.trim()) {
-      toast("Email is required.", "error");
-      return;
-    }
-
-    setAddingMember(true);
-    try {
-      const member = await api.post<ProjectMember>(
-        `/projects/${projectId}/members`,
-        {
-          email: memberEmail.trim(),
-          role: memberRole,
-        },
-      );
-      setProject((prev) =>
-        prev ? { ...prev, members: [...prev.members, member] } : null,
-      );
-      setAddMemberOpen(false);
-      setMemberEmail("");
-      setMemberRole("editor");
-      toast(`${member.display_name} added as ${member.role}!`, "success");
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Failed to add member";
-      toast(msg, "error");
-    } finally {
-      setAddingMember(false);
     }
   };
 
@@ -243,50 +204,14 @@ export function SettingsPage() {
       </section>
 
       {/* Members */}
-      <section className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-            <Users className="w-5 h-5" />
-            Members
-            <span className="text-sm font-normal text-gray-500 dark:text-gray-400">
-              ({project.members.length})
-            </span>
-          </h2>
-          <Button size="sm" onClick={() => setAddMemberOpen(true)}>
-            <UserPlus className="w-4 h-4" />
-            Add Member
-          </Button>
-        </div>
+      <MembersSection
+        projectId={projectId!}
+        members={project.members}
+        onInviteSent={() => setInviteRefreshKey((k) => k + 1)}
+      />
 
-        <div className="space-y-2">
-          {project.members.map((member) => (
-            <Card key={member.id} className="flex items-center gap-3">
-              {/* Avatar */}
-              <div className="flex items-center justify-center w-9 h-9 rounded-full bg-gradient-to-br from-teal to-coral text-white text-sm font-semibold shrink-0">
-                {member.display_name
-                  .split(" ")
-                  .map((w) => w[0])
-                  .join("")
-                  .toUpperCase()
-                  .slice(0, 2)}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                  {member.display_name}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                  {member.email}
-                </p>
-              </div>
-              <span
-                className={`text-xs font-medium px-2 py-0.5 rounded-full ${ROLE_COLORS[member.role] || ROLE_COLORS.viewer}`}
-              >
-                {member.role}
-              </span>
-            </Card>
-          ))}
-        </div>
-      </section>
+      {/* Pending Invites */}
+      <PendingInvites projectId={projectId!} refreshKey={inviteRefreshKey} />
 
       {/* Theme */}
       <section className="mb-8">
@@ -357,73 +282,6 @@ export function SettingsPage() {
           </div>
         </Card>
       </section>
-
-      {/* Add Member Modal */}
-      <Modal
-        open={addMemberOpen}
-        onClose={() => {
-          setAddMemberOpen(false);
-          setMemberEmail("");
-          setMemberRole("editor");
-        }}
-        title="Add Member"
-      >
-        <form onSubmit={handleAddMember} className="space-y-4">
-          <div>
-            <label
-              htmlFor="memberEmail"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >
-              Email <span className="text-red-500">*</span>
-            </label>
-            <Input
-              id="memberEmail"
-              type="email"
-              value={memberEmail}
-              onChange={(e) => setMemberEmail(e.target.value)}
-              placeholder="user@example.com"
-              autoFocus
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="memberRole"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >
-              Role
-            </label>
-            <Select
-              id="memberRole"
-              value={memberRole}
-              onChange={(e) => setMemberRole(e.target.value as ProjectRole)}
-            >
-              {ROLES.map((r) => (
-                <option key={r} value={r}>
-                  {r.charAt(0).toUpperCase() + r.slice(1)}
-                </option>
-              ))}
-            </Select>
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-              <span className="font-medium">Owner:</span> full access |{" "}
-              <span className="font-medium">Editor:</span> read/write |{" "}
-              <span className="font-medium">Viewer:</span> read only
-            </p>
-          </div>
-          <div className="flex justify-end gap-2 pt-2">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setAddMemberOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" loading={addingMember}>
-              <UserPlus className="w-4 h-4" />
-              Add Member
-            </Button>
-          </div>
-        </form>
-      </Modal>
 
       {/* Archive Confirmation Modal */}
       <Modal

@@ -1,0 +1,63 @@
+{
+  "project": "codevv-phase0",
+  "status": "BUILDING",
+  "branch": "autopilot/codevv-phase0-20260226",
+  "tasks": [
+    {
+      "id": 1,
+      "description": "Organization + OrgMembership models + migrations",
+      "status": "DONE"
+    },
+    {
+      "id": 2,
+      "description": "Update User + Project models + migrations (persona)",
+      "status": "DONE"
+    },
+    {
+      "id": 3,
+      "description": "Org service + Pydantic schemas",
+      "status": "DONE"
+    },
+    {
+      "id": 4,
+      "description": "Org routes (12 endpoints)",
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": 5,
+      "description": "Auth update: auto-create personal org + invite_token",
+      "status": "PENDING"
+    },
+    {
+      "id": 6,
+      "description": "Update projects routes to accept + filter by org_id",
+      "status": "PENDING"
+    },
+    {
+      "id": 7,
+      "description": "Claude subscription validation",
+      "status": "PENDING"
+    },
+    {
+      "id": 8,
+      "description": "Frontend types + API functions",
+      "status": "PENDING"
+    },
+    {
+      "id": 9,
+      "description": "InviteAcceptPage",
+      "status": "PENDING"
+    },
+    {
+      "id": 10,
+      "description": "OrgSetupPage + AuthContext org state + ProjectListPage org switcher",
+      "status": "PENDING"
+    }
+  ],
+  "tests": {
+    "total": 0,
+    "passing": 0,
+    "failing": 0
+  },
+  "updated_at": "2026-02-27T01:18:24Z"
+}

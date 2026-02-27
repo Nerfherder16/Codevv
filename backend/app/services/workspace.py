@@ -55,6 +55,9 @@ async def create_workspace(
     user_id: uuid.UUID,
     scope: str,
     db: AsyncSession,
+    *,
+    project_slug: str = "workspace",
+    username: str = "dev",
 ) -> Workspace:
     port = await _allocate_port(db)
     ws_id = uuid.uuid4()
@@ -73,6 +76,7 @@ async def create_workspace(
     docker = await get_docker()
     config = {
         "Image": settings.workspace_image,
+        "Hostname": project_slug,
         "ExposedPorts": {"8443/tcp": {}},
         "HostConfig": {
             "PortBindings": {"8443/tcp": [{"HostPort": str(port)}]},
@@ -85,6 +89,8 @@ async def create_workspace(
             "PASSWORD=",
             "CS_DISABLE_PROXY=1",
             "DEFAULT_WORKSPACE=/config/workspace",
+            f"CODEVV_USER={username}",
+            f"CODEVV_PROJECT={project_slug}",
         ],
     }
 

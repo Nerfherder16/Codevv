@@ -49,6 +49,19 @@ class Settings(BaseSettings):
     workspace_image: str = "codevv-code-server:latest"
     workspace_idle_timeout_min: int = 60
 
+    # Email (Resend)
+    resend_api_key: str = ""
+    from_email: str = "noreply@codevv.dev"
+    frontend_url: str = "http://localhost:5173"
+
+    # Invites & Password Reset
+    invite_token_expire_hours: int = 72
+    reset_token_expire_minutes: int = 30
+
+    # Rate Limiting
+    rate_limit_login_per_minute: int = 5
+    rate_limit_register_per_minute: int = 3
+
     # App
     environment: str = "development"
     app_name: str = "Codevv"

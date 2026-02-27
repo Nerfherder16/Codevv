@@ -22,6 +22,7 @@ import { CompliancePage } from "./pages/CompliancePage";
 import { DocumentsPage } from "./pages/DocumentsPage";
 import { WorkspacePage } from "./pages/WorkspacePage";
 import { ChatPage } from "./pages/ChatPage";
+import { TasksPage } from "./pages/TasksPage";
 import { InviteAcceptPage } from "./pages/InviteAcceptPage";
 import { OrgSetupPage } from "./pages/OrgSetupPage";
 
@@ -64,6 +65,7 @@ export default function App() {
                 <Route path="documents" element={<DocumentsPage />} />
                 <Route path="settings" element={<SettingsPage />} />
                 <Route path="chat" element={<ChatPage />} />
+                <Route path="tasks" element={<TasksPage />} />
               </Route>
             </Routes>
           </ProtectedRoute>

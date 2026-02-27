@@ -17,6 +17,7 @@ class WorkspaceResponse(BaseModel):
     scope: str
     last_activity: datetime
     created_at: datetime
+    project_slug: str | None = None
 
     model_config = {"from_attributes": True}
 

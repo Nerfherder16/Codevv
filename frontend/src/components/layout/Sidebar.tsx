@@ -18,6 +18,7 @@ import {
   FileText,
   Terminal,
   MessageSquare,
+  CheckSquare,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { useEventStreamContext } from "../../contexts/EventStreamContext";
@@ -40,6 +41,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { to: "", icon: LayoutDashboard, label: "Overview", end: true },
       { to: "chat", icon: MessageSquare, label: "AI Chat" },
+      { to: "tasks", icon: CheckSquare, label: "Tasks" },
       { to: "canvas", icon: Pencil, label: "Canvas" },
       { to: "ideas", icon: Lightbulb, label: "Idea Vault" },
       { to: "knowledge", icon: Share2, label: "Knowledge Graph" },

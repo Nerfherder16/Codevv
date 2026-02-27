@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, User, Mail, Lock } from "lucide-react";
 
@@ -265,6 +266,14 @@ export function LoginPage() {
                   className={INPUT_CLASS}
                 />
               </div>
+              {mode === "login" && (
+                <Link
+                  to="/reset-password"
+                  className="block text-right text-xs text-gray-400 hover:text-[#00AFB9] transition-colors mt-2"
+                >
+                  Forgot your password?
+                </Link>
+              )}
             </div>
 
             <div className="pt-2">

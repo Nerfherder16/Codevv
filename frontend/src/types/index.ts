@@ -565,3 +565,53 @@ export interface AppEvent {
   actor_id: string | null;
   timestamp: string;
 }
+
+// Tasks
+export type TaskStatus = "todo" | "in_progress" | "blocked" | "done";
+export type TaskPriority = "low" | "medium" | "high" | "urgent";
+
+export interface Task {
+  id: string;
+  project_id: string;
+  title: string;
+  description: string | null;
+  status: TaskStatus;
+  priority: TaskPriority;
+  created_by: string;
+  assigned_to: string | null;
+  assignee: { id: string; display_name: string; email: string } | null;
+  due_date: string | null;
+  completed_at: string | null;
+  linked_entity_type: string | null;
+  linked_entity_id: string | null;
+  source_type: string | null;
+  source_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// Comments + References
+export interface Comment {
+  id: string;
+  project_id: string;
+  entity_type: string;
+  entity_id: string;
+  author_id: string;
+  author_name: string | null;
+  body: string;
+  mentioned_user_ids: string[] | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Reference {
+  id: string;
+  project_id: string;
+  source_type: string;
+  source_id: string;
+  target_type: string;
+  target_id: string;
+  relation: string | null;
+  created_by: string;
+  created_at: string;
+}

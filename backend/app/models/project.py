@@ -1,16 +1,32 @@
+from __future__ import annotations
+
+import enum
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import String, DateTime, ForeignKey, Enum as SAEnum
+from typing import TYPE_CHECKING
+
+from sqlalchemy import DateTime, ForeignKey, String
+from sqlalchemy import Enum as SAEnum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from app.core.database import Base
-import enum
+
+if TYPE_CHECKING:
+    from app.models.organization import Organization
 
 
 class ProjectRole(str, enum.Enum):
     owner = "owner"
     editor = "editor"
     viewer = "viewer"
+
+
+class ProjectPersona(str, enum.Enum):
+    developer = "developer"
+    creator = "creator"
+    operations = "operations"
+    finance = "finance"
 
 
 class Project(Base):
@@ -22,6 +38,9 @@ class Project(Base):
     description: Mapped[str | None] = mapped_column(String(2000), nullable=True)
     archived: Mapped[bool] = mapped_column(default=False)
     created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    org_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
@@ -34,6 +53,9 @@ class Project(Base):
     members: Mapped[list["ProjectMember"]] = relationship(back_populates="project", cascade="all, delete-orphan")
     canvases: Mapped[list["Canvas"]] = relationship(back_populates="project", cascade="all, delete-orphan")
     ideas: Mapped[list["Idea"]] = relationship(back_populates="project", cascade="all, delete-orphan")
+    organization: Mapped["Organization | None"] = relationship(
+        "Organization", back_populates="projects", foreign_keys=[org_id]
+    )
 
 
 class ProjectMember(Base):
@@ -43,6 +65,9 @@ class ProjectMember(Base):
     project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("projects.id"), nullable=False)
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     role: Mapped[ProjectRole] = mapped_column(SAEnum(ProjectRole), default=ProjectRole.editor)
+    persona: Mapped[ProjectPersona] = mapped_column(
+        SAEnum(ProjectPersona), default=ProjectPersona.creator
+    )
     joined_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )

@@ -68,4 +68,66 @@ export const api = {
     summary: (projectId: string) =>
       request<import('../types').ActivitySummary>(`/projects/${projectId}/activity/summary`),
   },
+
+  tasks: {
+    list: (projectId: string, params?: { status?: string; priority?: string; assigned_to?: string; limit?: number; offset?: number }) => {
+      const qs = new URLSearchParams();
+      if (params?.status) qs.set('status', params.status);
+      if (params?.priority) qs.set('priority', params.priority);
+      if (params?.assigned_to) qs.set('assigned_to', params.assigned_to);
+      if (params?.limit != null) qs.set('limit', String(params.limit));
+      if (params?.offset != null) qs.set('offset', String(params.offset));
+      const q = qs.toString() ? `?${qs.toString()}` : '';
+      return request<import('../types').Task[]>(`/projects/${projectId}/tasks${q}`);
+    },
+    get: (projectId: string, taskId: string) =>
+      request<import('../types').Task>(`/projects/${projectId}/tasks/${taskId}`),
+    create: (projectId: string, data: {
+      title: string;
+      description?: string;
+      status?: string;
+      priority?: string;
+      assigned_to?: string;
+      due_date?: string;
+      linked_entity_type?: string;
+      linked_entity_id?: string;
+    }) => request<import('../types').Task>(`/projects/${projectId}/tasks`, { method: 'POST', body: JSON.stringify(data) }),
+    update: (projectId: string, taskId: string, data: Partial<{
+      title: string;
+      description: string;
+      status: string;
+      priority: string;
+      assigned_to: string;
+      due_date: string;
+    }>) => request<import('../types').Task>(`/projects/${projectId}/tasks/${taskId}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    delete: (projectId: string, taskId: string) =>
+      request<void>(`/projects/${projectId}/tasks/${taskId}`, { method: 'DELETE' }),
+    myTasks: (params?: { status?: string; limit?: number }) => {
+      const qs = new URLSearchParams();
+      if (params?.status) qs.set('status', params.status);
+      if (params?.limit != null) qs.set('limit', String(params.limit));
+      const q = qs.toString() ? `?${qs.toString()}` : '';
+      return request<import('../types').Task[]>(`/tasks/me${q}`);
+    },
+  },
+
+  comments: {
+    list: (projectId: string, entityType: string, entityId: string) =>
+      request<import('../types').Comment[]>(
+        `/projects/${projectId}/comments?entity_type=${entityType}&entity_id=${entityId}`
+      ),
+    create: (projectId: string, data: { entity_type: string; entity_id: string; body: string }) =>
+      request<import('../types').Comment>(`/projects/${projectId}/comments`, { method: 'POST', body: JSON.stringify(data) }),
+    delete: (projectId: string, commentId: string) =>
+      request<void>(`/projects/${projectId}/comments/${commentId}`, { method: 'DELETE' }),
+    createReference: (projectId: string, data: {
+      source_type: string; source_id: string;
+      target_type: string; target_id: string;
+      relation?: string;
+    }) => request<import('../types').Reference>(`/projects/${projectId}/references`, { method: 'POST', body: JSON.stringify(data) }),
+    listReferences: (projectId: string, entityType: string, entityId: string) =>
+      request<import('../types').Reference[]>(
+        `/projects/${projectId}/references?entity_type=${entityType}&entity_id=${entityId}`
+      ),
+  },
 };

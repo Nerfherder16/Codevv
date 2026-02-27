@@ -26,6 +26,8 @@ from app.api.routes import (
     ws_terminal,
     activity,
     events,
+    tasks,
+    comments,
 )
 import structlog
 
@@ -188,6 +190,11 @@ app.include_router(ws_proxy.router)
 # Real-time event stream + activity feed
 app.include_router(activity.router, prefix="/api")
 app.include_router(events.router)
+
+# Phase 2: tasks + comments + references
+app.include_router(tasks.router, prefix="/api")
+app.include_router(tasks.my_tasks_router, prefix="/api")
+app.include_router(comments.router, prefix="/api")
 
 
 @app.get("/health")

@@ -28,14 +28,23 @@ async def create_workspace(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    await get_project_with_access(project_id, user, db, min_role=ProjectRole.editor)
+    project = await get_project_with_access(
+        project_id, user, db, min_role=ProjectRole.editor
+    )
     try:
         workspace = await ws_service.create_workspace(
-            project_id, user.id, req.scope, db
+            project_id,
+            user.id,
+            req.scope,
+            db,
+            project_slug=project.slug,
+            username=user.display_name,
         )
     except RuntimeError as e:
         raise HTTPException(status_code=503, detail=str(e))
-    return WorkspaceResponse.model_validate(workspace)
+    resp = WorkspaceResponse.model_validate(workspace)
+    resp.project_slug = project.slug
+    return resp
 
 
 @router.get("", response_model=list[WorkspaceResponse])
@@ -44,9 +53,14 @@ async def list_workspaces(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    await get_project_with_access(project_id, user, db)
+    project = await get_project_with_access(project_id, user, db)
     workspaces = await ws_service.list_workspaces(project_id, db)
-    return [WorkspaceResponse.model_validate(w) for w in workspaces]
+    results = []
+    for w in workspaces:
+        resp = WorkspaceResponse.model_validate(w)
+        resp.project_slug = project.slug
+        results.append(resp)
+    return results
 
 
 @router.get("/{workspace_id}", response_model=WorkspaceResponse)
@@ -56,11 +70,13 @@ async def get_workspace(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    await get_project_with_access(project_id, user, db)
+    project = await get_project_with_access(project_id, user, db)
     workspace = await ws_service.get_workspace(workspace_id, db)
     if not workspace or workspace.project_id != project_id:
         raise HTTPException(status_code=404, detail="Workspace not found")
-    return WorkspaceResponse.model_validate(workspace)
+    resp = WorkspaceResponse.model_validate(workspace)
+    resp.project_slug = project.slug
+    return resp
 
 
 @router.delete("/{workspace_id}", status_code=204)

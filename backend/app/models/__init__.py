@@ -18,6 +18,8 @@ from app.models.project_invite import ProjectInvite, InviteStatus  # noqa: F401
 from app.models.password_reset import PasswordResetToken  # noqa: F401
 from app.models.organization import Organization, OrgMembership, OrgRole, OrgMemberStatus  # noqa: F401
 from app.models.activity import Activity  # noqa: F401
+from app.models.task import Task, TaskStatus, TaskPriority  # noqa: F401
+from app.models.comment import Comment, Reference  # noqa: F401
 __all__ = [
     "User",
     "Project",
@@ -53,4 +55,9 @@ __all__ = [
     "OrgRole",
     "OrgMemberStatus",
     "Activity",
+    "Task",
+    "TaskStatus",
+    "TaskPriority",
+    "Comment",
+    "Reference",
 ]

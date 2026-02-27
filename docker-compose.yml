@@ -73,7 +73,9 @@ services:
       GITHUB_TOKEN: "${GITHUB_TOKEN:-}"
       SOLANA_RPC_URL: "https://api.devnet.solana.com"
       ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
-      CLAUDE_OAUTH_CALLBACK_URL: "http://localhost:8000/callback"
+      CLAUDE_OAUTH_CALLBACK_URL: "https://codevv.streamy.tube/callback"
+      RESEND_API_KEY: "${RESEND_API_KEY:-}"
+      FRONTEND_URL: "${FRONTEND_URL:-http://localhost:5173}"
     volumes:
       - ./backend/app:/app/app
       - /var/run/docker.sock:/var/run/docker.sock
@@ -95,7 +97,9 @@ services:
       GITHUB_TOKEN: "${GITHUB_TOKEN:-}"
       SOLANA_RPC_URL: "https://api.devnet.solana.com"
       ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
-      CLAUDE_OAUTH_CALLBACK_URL: "http://localhost:8000/callback"
+      CLAUDE_OAUTH_CALLBACK_URL: "https://codevv.streamy.tube/callback"
+      RESEND_API_KEY: "${RESEND_API_KEY:-}"
+      FRONTEND_URL: "${FRONTEND_URL:-http://localhost:5173}"
     depends_on:
       postgres:
         condition: service_healthy

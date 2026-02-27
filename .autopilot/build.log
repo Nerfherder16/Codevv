@@ -1,0 +1,9 @@
+2026-02-27T00:33:03Z BUILD_START: Phase 0 Organization Layer
+2026-02-27T00:33:03Z KNOWLEDGE_RETRIEVAL: No relevant autopilot memories found. Known pitfall noted: SAEnum on PostgreSQL can conflict on re-run — use 'create_type=False' or checkfirst in migrations.
+2026-02-27T00:33:11Z TASK_START: #1 - Organization + OrgMembership models + migrations
+2026-02-27T01:11:27Z TASK_DONE: #1 - Organization + OrgMembership models + migrations. Tables: organizations, org_memberships. Alembic stamped.
+2026-02-27T01:11:27Z TASK_START: #2 - Update User + Project models + migrations (persona)
+2026-02-27T01:11:27Z TASK_START: #3 - Org service + Pydantic schemas (parallel with #2)
+2026-02-27T01:18:23Z TASK_DONE: #2 - User personal_org_id, Project org_id, ProjectMember persona columns added
+2026-02-27T01:18:23Z TASK_DONE: #3 - org_service.py + schemas/org.py created and validated
+2026-02-27T01:18:23Z TASK_START: #4 - Org routes (12 endpoints)
