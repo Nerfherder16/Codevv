@@ -22,6 +22,14 @@ from app.models.scaffold import ScaffoldJob
 from app.models.deploy import Environment
 from app.models.knowledge import KnowledgeEntity
 from app.models.conversation import Conversation, ConversationMessage
+from app.models.task import Task, TaskStatus, TaskPriority
+from app.models.compliance import ComplianceChecklist, ComplianceCheck, CheckStatus
+from app.models.activity import Activity
+from app.models.business_rule import BusinessRule
+from app.models.file import File as ProjectFile
+from app.models.canvas import Canvas, CanvasComponent
+from app.models.idea import Idea, IdeaStatus
+
 
 logger = structlog.get_logger()
 
@@ -178,8 +186,176 @@ TOOLS = [
             "required": ["items"],
         },
     },
+    {
+        "name": "add_canvas_component",
+        "description": "Add a new component to an architecture canvas. Use when the user says 'add X to the architecture' or 'create a Y component'.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "project_id": {"type": "string"},
+                "canvas_id": {"type": "string", "description": "The canvas to add to"},
+                "name": {"type": "string", "description": "Component name"},
+                "component_type": {"type": "string", "description": "Type: service, database, api, frontend, queue, cache, storage, external"},
+                "tech_stack": {"type": "string", "description": "Technology (e.g. FastAPI, PostgreSQL, React)"},
+                "description": {"type": "string", "description": "What this component does"},
+            },
+            "required": ["project_id", "canvas_id", "name", "component_type"],
+        },
+    },
+    {
+        "name": "update_idea_status",
+        "description": "Move an idea to a new status. Valid statuses: draft, proposed, approved, rejected, implemented.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "project_id": {"type": "string"},
+                "idea_id": {"type": "string"},
+                "status": {"type": "string", "enum": ["draft", "proposed", "approved", "rejected", "implemented"]},
+            },
+            "required": ["project_id", "idea_id", "status"],
+        },
+    },
+    {
+        "name": "update_compliance_check",
+        "description": "Mark a compliance check as passed, failed, or pending. Use when the user confirms a compliance item is done or failed.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "project_id": {"type": "string"},
+                "check_id": {"type": "string"},
+                "status": {"type": "string", "enum": ["passed", "failed", "pending"]},
+                "notes": {"type": "string", "description": "Optional notes about this update"},
+            },
+            "required": ["project_id", "check_id", "status"],
+        },
+    },
+    {
+        "name": "create_task",
+        "description": "Create a task and optionally assign it to a team member. Use when action items emerge from conversation or user says 'remind me to...' or 'we need to...'.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "project_id": {"type": "string"},
+                "title": {"type": "string"},
+                "description": {"type": "string"},
+                "priority": {"type": "string", "enum": ["low", "medium", "high", "urgent"]},
+                "due_date": {"type": "string", "description": "ISO date string, e.g. 2026-03-15. Optional."},
+            },
+            "required": ["project_id", "title"],
+        },
+    },
+    {
+        "name": "list_tasks",
+        "description": "Get project tasks with optional filters.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "project_id": {"type": "string"},
+                "status": {"type": "string", "description": "Filter: todo, in_progress, done, cancelled"},
+                "priority": {"type": "string", "description": "Filter: low, medium, high, urgent"},
+            },
+            "required": ["project_id"],
+        },
+    },
+    {
+        "name": "create_document",
+        "description": "Save content from the conversation as a project document. Use when user asks to 'save this as a document', 'create a spec', or 'document this decision'.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "project_id": {"type": "string"},
+                "title": {"type": "string", "description": "Document title (used as filename)"},
+                "content": {"type": "string", "description": "The document content to save"},
+            },
+            "required": ["project_id", "title", "content"],
+        },
+    },
+    {
+        "name": "search_everything",
+        "description": "Search across all project entities: ideas, tasks, canvas components, and business rules. Use when user asks 'find everything about X' or wants to search the project broadly.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "project_id": {"type": "string"},
+                "query": {"type": "string"},
+            },
+            "required": ["project_id", "query"],
+        },
+    },
+    {
+        "name": "get_activity",
+        "description": "Get recent project activity — who did what and when. Use to answer 'what happened recently' or 'what has the team been working on'.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "project_id": {"type": "string"},
+                "limit": {"type": "integer", "description": "Max results (default 20)"},
+            },
+            "required": ["project_id"],
+        },
+    },
+    {
+        "name": "get_compliance_status",
+        "description": "Get compliance readiness overview: overall score, counts by status, and any failing checks. Use to answer compliance/launch readiness questions.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "project_id": {"type": "string"},
+            },
+            "required": ["project_id"],
+        },
+    },
+    {
+        "name": "get_business_rules",
+        "description": "Fetch active business rules for the project — architectural constraints, coding standards, and compliance requirements.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "project_id": {"type": "string"},
+                "scope": {"type": "string", "description": "Filter by scope: architecture, compliance, security, financial, operational, coding"},
+            },
+            "required": ["project_id"],
+        },
+    },
 ]
 
+
+
+
+# ── Persona-based tool filtering ─────────────────────────────────────────
+
+PERSONA_TOOLS: dict[str, list[str] | None] = {
+    "developer": None,  # all tools
+    "creator": [
+        "get_project_summary", "list_canvases", "get_canvas_components",
+        "get_ideas", "search_ideas", "create_idea", "update_idea_status",
+        "add_canvas_component", "get_knowledge_context", "push_to_recall",
+        "create_task", "list_tasks", "create_document",
+        "search_everything", "get_activity", "get_business_rules",
+    ],
+    "finance": [
+        "get_project_summary", "get_ideas", "get_compliance_status",
+        "get_business_rules", "get_knowledge_context", "push_to_recall",
+        "create_task", "list_tasks", "search_everything", "get_activity",
+        "update_compliance_check",
+    ],
+    "operations": [
+        "get_project_summary", "get_deploy_config", "get_compliance_status",
+        "get_business_rules", "get_knowledge_context", "push_to_recall",
+        "create_task", "list_tasks", "search_everything", "get_activity",
+        "update_compliance_check",
+    ],
+}
+
+
+def _get_tools_for_persona(persona: str | None) -> list[dict]:
+    # Return filtered TOOLS list based on user persona. Developer gets all.
+    if not persona or persona == "developer":
+        return TOOLS
+    allowed = PERSONA_TOOLS.get(persona)
+    if allowed is None:
+        return TOOLS
+    return [t for t in TOOLS if t["name"] in allowed]
 
 # ── Tool execution ───────────────────────────────────────────────────────
 
@@ -524,11 +700,252 @@ async def _execute_tool(
                     tool_input.get("items", []),
                     db,
                 )
+            case "add_canvas_component":
+                return await _tool_add_canvas_component(
+                    str(project_id), tool_input["canvas_id"], tool_input["name"],
+                    tool_input.get("component_type", "service"),
+                    tool_input.get("tech_stack"), tool_input.get("description"), db,
+                )
+            case "update_idea_status":
+                return await _tool_update_idea_status(
+                    str(project_id), tool_input["idea_id"], tool_input["status"], db,
+                )
+            case "update_compliance_check":
+                return await _tool_update_compliance_check(
+                    tool_input["check_id"], tool_input["status"],
+                    tool_input.get("notes"), db,
+                )
+            case "create_task":
+                return await _tool_create_task(
+                    str(project_id), tool_input["title"],
+                    tool_input.get("description"), tool_input.get("priority", "medium"),
+                    tool_input.get("due_date"), db,
+                )
+            case "list_tasks":
+                return await _tool_list_tasks(
+                    str(project_id), tool_input.get("status"), tool_input.get("priority"), db,
+                )
+            case "create_document":
+                return await _tool_create_document(
+                    str(project_id), tool_input["title"], tool_input["content"], db,
+                )
+            case "search_everything":
+                return await _tool_search_everything(
+                    str(project_id), tool_input["query"], db,
+                )
+            case "get_activity":
+                return await _tool_get_activity(
+                    str(project_id), int(tool_input.get("limit", 20)), db,
+                )
+            case "get_compliance_status":
+                return await _tool_get_compliance_status(str(project_id), db)
+            case "get_business_rules":
+                return await _tool_get_business_rules(
+                    str(project_id), tool_input.get("scope"), db,
+                )
             case _:
                 return json.dumps({"error": f"Unknown tool: {name}"})
     except Exception as e:
         logger.error("tool.execution_error", tool=name, error=str(e))
         return json.dumps({"error": f"Tool execution failed: {str(e)}"})
+
+
+
+# ── Phase-4 tool implementations ─────────────────────────────────────────
+
+
+async def _tool_add_canvas_component(
+    project_id: str, canvas_id: str, name: str,
+    component_type: str, tech_stack, description, db: AsyncSession
+) -> str:
+    rc = await db.execute(
+        select(Canvas).where(Canvas.id == canvas_id, Canvas.project_id == project_id)
+    )
+    canvas = rc.scalar_one_or_none()
+    if not canvas:
+        return json.dumps({"error": "Canvas not found."})
+    component = CanvasComponent(
+        canvas_id=canvas_id,
+        name=name,
+        component_type=component_type,
+        tech_stack=tech_stack,
+        description=description,
+        position_x=0,
+        position_y=0,
+    )
+    db.add(component)
+    await db.commit()
+    return json.dumps({"ok": True, "message": f"Added component '{name}' ({component_type}) to canvas."})
+
+
+async def _tool_update_idea_status(
+    project_id: str, idea_id: str, status: str, db: AsyncSession
+) -> str:
+    result = await db.execute(
+        select(Idea).where(Idea.id == idea_id, Idea.project_id == project_id)
+    )
+    idea = result.scalar_one_or_none()
+    if not idea:
+        return json.dumps({"error": "Idea not found."})
+    idea.status = IdeaStatus(status)
+    await db.commit()
+    return json.dumps({"ok": True, "message": f"Idea '{idea.title}' status updated to {status}."})
+
+
+async def _tool_update_compliance_check(
+    check_id: str, status: str, notes, db: AsyncSession
+) -> str:
+    result = await db.execute(select(ComplianceCheck).where(ComplianceCheck.id == check_id))
+    check = result.scalar_one_or_none()
+    if not check:
+        return json.dumps({"error": "Compliance check not found."})
+    check.status = CheckStatus(status)
+    if notes:
+        check.notes = notes
+    await db.commit()
+    return json.dumps({"ok": True, "message": f"Check '{check.title}' marked as {status}."})
+
+
+async def _tool_create_task(
+    project_id: str, title: str, description, priority: str, due_date, db: AsyncSession
+) -> str:
+    import datetime as _dt
+    due = None
+    if due_date:
+        try:
+            due = _dt.date.fromisoformat(due_date)
+        except ValueError:
+            pass
+    task = Task(
+        project_id=project_id,
+        title=title,
+        description=description,
+        priority=TaskPriority(priority) if priority else TaskPriority.medium,
+        due_date=due,
+    )
+    db.add(task)
+    await db.commit()
+    return json.dumps({"ok": True, "message": f"Task created: '{title}' (priority: {priority or 'medium'})."})
+
+
+async def _tool_list_tasks(
+    project_id: str, status_filter, priority_filter, db: AsyncSession
+) -> str:
+    from sqlalchemy import and_
+    conditions = [Task.project_id == project_id]
+    if status_filter:
+        conditions.append(Task.status == status_filter)
+    if priority_filter:
+        conditions.append(Task.priority == TaskPriority(priority_filter))
+    result = await db.execute(select(Task).where(and_(*conditions)).limit(20))
+    tasks = result.scalars().all()
+    if not tasks:
+        return json.dumps({"tasks": [], "message": "No tasks found."})
+    items = [{"title": t.title, "status": t.status, "priority": t.priority} for t in tasks]
+    return json.dumps({"tasks": items})
+
+
+async def _tool_create_document(
+    project_id: str, title: str, content_text: str, db: AsyncSession
+) -> str:
+    doc = ProjectFile(
+        project_id=project_id,
+        filename=title if title.endswith(".md") else title + ".md",
+        mime_type="text/markdown",
+        size_bytes=len(content_text.encode()),
+    )
+    db.add(doc)
+    await db.commit()
+    return json.dumps({"ok": True, "message": f"Document '{title}' saved."})
+
+
+async def _tool_search_everything(project_id: str, query: str, db: AsyncSession) -> str:
+    q = query.lower()
+    results = []
+    r = await db.execute(select(Idea).where(Idea.project_id == project_id))
+    for idea in r.scalars().all():
+        if q in (idea.title or "").lower() or q in (idea.description or "").lower():
+            results.append({"type": "idea", "id": str(idea.id), "title": idea.title, "subtitle": str(idea.status), "status": str(idea.status)})
+    r = await db.execute(select(Task).where(Task.project_id == project_id))
+    for task in r.scalars().all():
+        if q in (task.title or "").lower() or q in (task.description or "").lower():
+            results.append({"type": "task", "id": str(task.id), "title": task.title, "subtitle": str(task.status), "status": str(task.status)})
+    r = await db.execute(select(Canvas).where(Canvas.project_id == project_id))
+    for canvas in r.scalars().all():
+        rc = await db.execute(select(CanvasComponent).where(CanvasComponent.canvas_id == canvas.id))
+        for comp in rc.scalars().all():
+            if q in (comp.name or "").lower() or q in (comp.description or "").lower():
+                results.append({"type": "component", "id": str(comp.id), "title": comp.name, "subtitle": comp.component_type, "component_type": comp.component_type})
+    r = await db.execute(
+        select(BusinessRule).where(BusinessRule.project_id == project_id, BusinessRule.is_active == True)
+    )
+    for rule in r.scalars().all():
+        if q in (rule.name or "").lower() or q in (rule.description or "").lower():
+            results.append({"type": "rule", "id": str(rule.id), "title": rule.name, "subtitle": rule.scope, "scope": rule.scope})
+    r = await db.execute(select(ProjectFile).where(ProjectFile.project_id == project_id))
+    for doc in r.scalars().all():
+        if q in (doc.original_filename or "").lower() or q in (doc.source or "").lower():
+            results.append({"type": "document", "id": str(doc.id), "title": doc.original_filename or doc.source or "File", "subtitle": doc.source or "document"})
+    return json.dumps({"results": results[:20], "count": len(results)})
+
+
+async def _tool_get_activity(project_id: str, limit: int, db: AsyncSession) -> str:
+    result = await db.execute(
+        select(Activity).where(Activity.project_id == project_id)
+        .order_by(Activity.created_at.desc()).limit(limit)
+    )
+    activities = result.scalars().all()
+    items = [
+        {"action": a.action, "description": a.description, "created_at": str(a.created_at)}
+        for a in activities
+    ]
+    return json.dumps({"activity": items})
+
+
+async def _tool_get_compliance_status(project_id: str, db: AsyncSession) -> str:
+    r = await db.execute(
+        select(ComplianceChecklist).where(ComplianceChecklist.project_id == project_id)
+    )
+    checklists = r.scalars().all()
+    if not checklists:
+        return json.dumps({"message": "No compliance checklists found."})
+    total = passed = failed = pending = 0
+    failing_checks = []
+    for cl in checklists:
+        rc = await db.execute(select(ComplianceCheck).where(ComplianceCheck.checklist_id == cl.id))
+        for c in rc.scalars().all():
+            total += 1
+            if c.status == CheckStatus.passed:
+                passed += 1
+            elif c.status == CheckStatus.failed:
+                failed += 1
+                failing_checks.append({"title": c.title, "checklist": cl.title})
+            else:
+                pending += 1
+    score = round((passed / total * 100) if total else 0)
+    return json.dumps({
+        "score": score,
+        "total": total,
+        "passed": passed,
+        "failed": failed,
+        "pending": pending,
+        "failing_checks": failing_checks,
+    })
+
+
+async def _tool_get_business_rules(project_id: str, scope, db: AsyncSession) -> str:
+    from sqlalchemy import and_
+    conditions = [BusinessRule.project_id == project_id, BusinessRule.is_active == True]
+    if scope:
+        conditions.append(BusinessRule.scope == scope)
+    result = await db.execute(select(BusinessRule).where(and_(*conditions)))
+    rules = result.scalars().all()
+    items = [
+        {"name": r.name, "description": r.description, "scope": r.scope, "enforcement": r.enforcement}
+        for r in rules
+    ]
+    return json.dumps({"rules": items})
+
 
 
 # ── System prompt ────────────────────────────────────────────────────────
@@ -538,6 +955,9 @@ async def _build_system_prompt(
     project_name: str,
     project_slug: str,
     project_id: uuid.UUID,
+    db: AsyncSession | None = None,
+    page: str | None = None,
+    persona: str | None = None,
 ) -> str:
     pid = str(project_id)
     base = f"""You are the AI assistant for **Codevv**, a collaborative software design and build platform.
@@ -602,6 +1022,52 @@ Be concise, use markdown, and be proactive about using your tools to give inform
             base += f"\n\n## Project Knowledge (from Recall):\n{context}"
     except Exception:
         pass  # Recall down — proceed without context
+
+
+    # Page context hints
+    if page:
+        page_hints = {
+            "canvas": "The user is viewing the Architecture Canvas. Prefer canvas/component tools.",
+            "ideas": "The user is on the Ideas page. Prefer idea management tools.",
+            "tasks": "The user is on the Tasks page. Prefer task creation and list tools.",
+            "compliance": "The user is on Compliance. Prefer compliance check tools.",
+            "rules": "The user is viewing Business Rules.",
+            "documents": "The user is on the Documents page.",
+            "chat": "The user is in the full-page AI chat.",
+        }
+        for key, hint in page_hints.items():
+            if key in page.lower():
+                base += f"\n\n**Page context:** {hint}"
+                break
+
+    # Inject active business rules
+    if db is not None:
+        try:
+            r = await db.execute(
+                select(BusinessRule).where(
+                    BusinessRule.project_id == project_id,
+                    BusinessRule.is_active == True,
+                ).limit(15)
+            )
+            rules = r.scalars().all()
+            if rules:
+                rule_lines = "\n".join(
+                    f"  - [{ru.scope}] {ru.name}: {ru.description}" for ru in rules
+                )
+                base += f"\n\n**Active project rules (always respect these):**\n{rule_lines}"
+        except Exception:
+            pass
+
+    # Persona tone
+    if persona and persona != "developer":
+        tone_map = {
+            "creator": "Speak plainly and visually. Focus on product, ideas, and design.",
+            "finance": "Be concise and precise. Focus on compliance, costs, and risk.",
+            "operations": "Be direct. Focus on deployment, infrastructure, and processes.",
+        }
+        hint = tone_map.get(persona)
+        if hint:
+            base += f"\n\n**User persona:** {persona}. {hint}"
 
     return base
 
@@ -802,6 +1268,173 @@ class ClaudeService:
         self._cache[key] = {"conversation_id": conv.id, "messages": []}
         return conv.id
 
+
+    async def _handle_add_canvas_component(self, inp: dict, project_id, db):
+        from sqlalchemy import select
+        rc = await db.execute(select(Canvas).where(Canvas.id == inp["canvas_id"], Canvas.project_id == project_id))
+        canvas = rc.scalar_one_or_none()
+        if not canvas:
+            return "Canvas not found."
+        component = CanvasComponent(
+            canvas_id=inp["canvas_id"],
+            name=inp["name"],
+            component_type=inp.get("component_type", "service"),
+            tech_stack=inp.get("tech_stack"),
+            description=inp.get("description"),
+            position_x=0,
+            position_y=0,
+        )
+        db.add(component)
+        await db.commit()
+        return f"Added component '{inp['name']}' ({inp.get('component_type', 'service')}) to canvas."
+
+    async def _handle_update_idea_status(self, inp: dict, project_id, db):
+        from sqlalchemy import select
+        result = await db.execute(select(Idea).where(Idea.id == inp["idea_id"], Idea.project_id == project_id))
+        idea = result.scalar_one_or_none()
+        if not idea:
+            return "Idea not found."
+        idea.status = IdeaStatus(inp["status"])
+        await db.commit()
+        return f"Idea '{idea.title}' status updated to {inp['status']}."
+
+    async def _handle_update_compliance_check(self, inp: dict, project_id, db):
+        from sqlalchemy import select
+        result = await db.execute(select(ComplianceCheck).where(ComplianceCheck.id == inp["check_id"]))
+        check = result.scalar_one_or_none()
+        if not check:
+            return "Compliance check not found."
+        check.status = CheckStatus(inp["status"])
+        if inp.get("notes"):
+            check.notes = inp["notes"]
+        await db.commit()
+        return f"Compliance check '{check.title}' marked as {inp['status']}."
+
+    async def _handle_create_task(self, inp: dict, project_id, db):
+        import datetime as _dt
+        due = None
+        if inp.get("due_date"):
+            try:
+                due = _dt.date.fromisoformat(inp["due_date"])
+            except ValueError:
+                pass
+        task = Task(
+            project_id=project_id,
+            title=inp["title"],
+            description=inp.get("description"),
+            priority=TaskPriority(inp.get("priority", "medium")),
+            due_date=due,
+        )
+        db.add(task)
+        await db.commit()
+        return f"Task created: '{inp['title']}' (priority: {inp.get('priority', 'medium')})."
+
+    async def _handle_list_tasks(self, inp: dict, project_id, db):
+        from sqlalchemy import select, and_
+        conditions = [Task.project_id == project_id]
+        if inp.get("status"):
+            conditions.append(Task.status == inp["status"])
+        if inp.get("priority"):
+            conditions.append(Task.priority == TaskPriority(inp["priority"]))
+        result = await db.execute(select(Task).where(and_(*conditions)).limit(20))
+        tasks = result.scalars().all()
+        if not tasks:
+            return "No tasks found matching the criteria."
+        lines = [f"- [{t.status}] {t.title} (priority: {t.priority})" for t in tasks]
+        return "Tasks:\n" + "\n".join(lines)
+
+    async def _handle_create_document(self, inp: dict, project_id, db):
+        doc = ProjectFile(
+            project_id=project_id,
+            filename=inp["title"],
+            mime_type="text/markdown",
+            size_bytes=len(inp["content"].encode()),
+        )
+        db.add(doc)
+        await db.commit()
+        return f"Document '{inp['title']}' saved to the project knowledge base."
+
+    async def _handle_search_everything(self, inp: dict, project_id, db):
+        from sqlalchemy import select
+        q = inp["query"].lower()
+        results = []
+        r = await db.execute(select(Idea).where(Idea.project_id == project_id))
+        for idea in r.scalars().all():
+            if q in (idea.title or "").lower() or q in (idea.description or "").lower():
+                results.append(f"[Idea] {idea.title} ({idea.status})")
+        r = await db.execute(select(Task).where(Task.project_id == project_id))
+        for task in r.scalars().all():
+            if q in (task.title or "").lower() or q in (task.description or "").lower():
+                results.append(f"[Task] {task.title} ({task.status})")
+        r = await db.execute(select(Canvas).where(Canvas.project_id == project_id))
+        for canvas in r.scalars().all():
+            rc = await db.execute(select(CanvasComponent).where(CanvasComponent.canvas_id == canvas.id))
+            for comp in rc.scalars().all():
+                if q in (comp.name or "").lower() or q in (comp.description or "").lower():
+                    results.append(f"[Component] {comp.name} ({comp.component_type})")
+        r = await db.execute(
+            select(BusinessRule).where(BusinessRule.project_id == project_id, BusinessRule.is_active == True)
+        )
+        for rule in r.scalars().all():
+            if q in (rule.name or "").lower() or q in (rule.description or "").lower():
+                results.append(f"[Rule] {rule.name} ({rule.scope})")
+        if not results:
+            return f"No results found for '{inp['query']}'."
+        lines_out = results[:20]
+        return f"Search results for '{inp['query']}':"+chr(10)+"\n".join(lines_out)
+
+    async def _handle_get_activity(self, inp: dict, project_id, db):
+        from sqlalchemy import select
+        limit = int(inp.get("limit", 20))
+        result = await db.execute(
+            select(Activity).where(Activity.project_id == project_id)
+            .order_by(Activity.created_at.desc()).limit(limit)
+        )
+        activities = result.scalars().all()
+        if not activities:
+            return "No recent activity found."
+        lines = [f"- {a.created_at.strftime('%Y-%m-%d %H:%M')} | {a.action}: {a.description}" for a in activities]
+        return "Recent activity:\n" + "\n".join(lines)
+
+    async def _handle_get_compliance_status(self, inp: dict, project_id, db):
+        from sqlalchemy import select
+        r = await db.execute(
+            select(ComplianceChecklist).where(ComplianceChecklist.project_id == project_id)
+        )
+        checklists = r.scalars().all()
+        if not checklists:
+            return "No compliance checklists found for this project."
+        total = passed = failed = pending = 0
+        failing = []
+        for cl in checklists:
+            rc = await db.execute(select(ComplianceCheck).where(ComplianceCheck.checklist_id == cl.id))
+            for c in rc.scalars().all():
+                total += 1
+                if c.status == CheckStatus.passed:
+                    passed += 1
+                elif c.status == CheckStatus.failed:
+                    failed += 1
+                    failing.append(f"  - {c.title} [{cl.title}]")
+                else:
+                    pending += 1
+        score = round((passed / total * 100) if total else 0)
+        summary = f"Compliance: {score}% ready ({passed}/{total} passed, {failed} failed, {pending} pending)."
+        if failing:
+            summary += "\nFailing checks:\n" + "\n".join(failing)
+        return summary
+
+    async def _handle_get_business_rules(self, inp: dict, project_id, db):
+        from sqlalchemy import select, and_
+        conditions = [BusinessRule.project_id == project_id, BusinessRule.is_active == True]
+        if inp.get("scope"):
+            conditions.append(BusinessRule.scope == inp["scope"])
+        result = await db.execute(select(BusinessRule).where(and_(*conditions)))
+        rules = result.scalars().all()
+        if not rules:
+            return "No active business rules found."
+        lines = [f"- [{r.scope}] {r.name}: {r.description}" for r in rules]
+        return "Active business rules:\n" + "\n".join(lines)
+
     async def chat(
         self,
         project_id: uuid.UUID,
@@ -811,6 +1444,8 @@ class ClaudeService:
         message: str,
         model: str | None,
         db: AsyncSession,
+        page: str | None = None,
+        persona: str | None = None,
     ) -> AsyncIterator[dict]:
         """Stream a chat response. Yields SSE-ready dicts."""
         settings = get_settings()
@@ -836,7 +1471,7 @@ class ClaudeService:
 
         # Build system prompt
         system_prompt = await _build_system_prompt(
-            project_name, project_slug, project_id
+            project_name, project_slug, project_id, db=db, page=page, persona=persona
         )
 
         # Append user message
@@ -855,7 +1490,7 @@ class ClaudeService:
                     max_tokens=4096,
                     system=system_prompt,
                     messages=messages,
-                    tools=TOOLS,
+                    tools=_get_tools_for_persona(persona),
                 ) as stream:
                     collected_content = []
 

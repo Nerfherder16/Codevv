@@ -11,6 +11,10 @@ import {
   BookmarkPlus,
   Bot,
   ExternalLink,
+  Maximize2,
+  Minimize2,
+  Columns,
+  Paperclip,
 } from "lucide-react";
 import { useAIChat } from "../../contexts/AIChatContext";
 import { useSSE } from "../../hooks/useSSE";
@@ -53,12 +57,15 @@ export function AIChatPanel() {
     setConversationId,
     setConversations,
     loadConversationMessages,
+    panelMode,
+    setPanelMode,
   } = useAIChat();
 
   const [input, setInput] = useState("");
   const [models, setModels] = useState<AIModel[]>([]);
   const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
   const [convDropdownOpen, setConvDropdownOpen] = useState(false);
+  const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
   const [authLoading, setAuthLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -306,7 +313,9 @@ export function AIChatPanel() {
 
       {/* Panel */}
       <div
-        className={`fixed right-0 top-0 h-full w-[400px] z-40 flex flex-col bg-white dark:bg-gray-950/95 dark:backdrop-blur-xl border-l border-gray-200 dark:border-white/[0.06] shadow-2xl dark:shadow-black/40 transition-transform duration-300 ${
+        className={`fixed right-0 top-0 h-full z-40 flex flex-col bg-white dark:bg-gray-950/95 dark:backdrop-blur-xl border-l border-gray-200 dark:border-white/[0.06] shadow-2xl dark:shadow-black/40 transition-all duration-300 ${
+          panelMode === 'fullscreen' ? 'w-full' : panelMode === 'expanded' ? 'w-[700px]' : 'w-[400px]'
+        } ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
@@ -409,6 +418,22 @@ export function AIChatPanel() {
                 )}
               </div>
             )}
+            <div className="flex items-center gap-0.5 mr-1">
+              {panelMode !== 'expanded' && panelMode !== 'fullscreen' && (
+                <button onClick={() => setPanelMode('expanded')}
+                  className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/[0.06] text-gray-500"
+                  title="Expand panel">
+                  <Maximize2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+              {panelMode !== 'docked' && (
+                <button onClick={() => setPanelMode('docked')}
+                  className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/[0.06] text-gray-500"
+                  title="Dock panel">
+                  <Minimize2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
             <button
               onClick={close}
               className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/[0.05] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
@@ -504,7 +529,20 @@ export function AIChatPanel() {
                 )}
               </div>
 
+              {attachedFile && (
+                <div className="mb-1.5 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-teal/10 border border-teal/20 text-xs text-teal w-fit">
+                  <Paperclip className="w-3 h-3 shrink-0" />
+                  <span className="truncate max-w-[200px]">{attachedFile.name}</span>
+                  <button onClick={() => setAttachedFile(null)} className="ml-1 text-teal/60 hover:text-teal">
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
               <div className="flex items-end gap-2">
+                <label className="shrink-0 cursor-pointer p-2 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-colors" title="Attach file">
+                  <Paperclip className="w-4 h-4" />
+                  <input type="file" className="hidden" accept=".txt,.md,.json,.yaml,.yml,.csv,.py,.ts,.tsx,.js,.jsx,.pdf,.docx" onChange={(e) => setAttachedFile(e.target.files?.[0] ?? null)} />
+                </label>
                 <textarea
                   ref={textareaRef}
                   value={input}

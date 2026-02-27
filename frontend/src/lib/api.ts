@@ -186,4 +186,9 @@ export const api = {
     deactivate: (projectId: string, ruleId: string) =>
       request<void>(`/projects/${projectId}/rules/${ruleId}`, { method: 'DELETE' }),
   },
+
+  search: (projectId: string, q: string) =>
+    request<{ results: Array<{ type: string; id: string; title: string; subtitle?: string }>; count: number }>(
+      `/projects/${projectId}/search?q=${encodeURIComponent(q)}`
+    ),
 };

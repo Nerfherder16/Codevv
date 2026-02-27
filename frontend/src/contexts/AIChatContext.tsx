@@ -7,8 +7,13 @@ import type {
 } from "../types";
 import { api } from "../lib/api";
 
+export type PanelMode = 'docked' | 'expanded' | 'fullscreen';
+
 interface AIChatState {
   isOpen: boolean;
+  panelMode: PanelMode;
+  setPanelMode: (mode: PanelMode) => void;
+  openWithMode: (mode: PanelMode, context?: ChatContextType) => void;
   messages: ChatMessage[];
   sessionId: string | null;
   conversationId: string | null;
@@ -37,6 +42,7 @@ const AIChatCtx = createContext<AIChatState | null>(null);
 
 export function AIChatProvider({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [panelMode, setPanelModeState] = useState<PanelMode>('docked');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -51,6 +57,17 @@ export function AIChatProvider({ children }: { children: React.ReactNode }) {
 
   const open = useCallback((context?: ChatContextType) => {
     if (context) setCurrentContext(context);
+    setIsOpen(true);
+  }, []);
+
+  const setPanelMode = useCallback((mode: PanelMode) => {
+    setPanelModeState(mode);
+    if (!isOpen) setIsOpen(true);
+  }, [isOpen]);
+
+  const openWithMode = useCallback((mode: PanelMode, context?: ChatContextType) => {
+    if (context) setCurrentContext(context);
+    setPanelModeState(mode);
     setIsOpen(true);
   }, []);
 
@@ -190,6 +207,9 @@ export function AIChatProvider({ children }: { children: React.ReactNode }) {
         open,
         close,
         toggle,
+        panelMode,
+        setPanelMode,
+        openWithMode,
         setModel,
         addMessage,
         updateLastAssistant,

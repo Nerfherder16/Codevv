@@ -1,3 +1,4 @@
+from sqlalchemy import select
 """AI chat endpoint — SSE streaming via Anthropic SDK + OAuth auth endpoints."""
 
 import json

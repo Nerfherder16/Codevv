@@ -29,6 +29,7 @@ from app.api.routes import (
     tasks,
     comments,
     files,
+    search,
 )
 import structlog
 
@@ -197,6 +198,7 @@ app.include_router(tasks.router, prefix="/api")
 app.include_router(tasks.my_tasks_router, prefix="/api")
 app.include_router(comments.router, prefix="/api")
 app.include_router(files.router, prefix="/api")
+app.include_router(search.router, prefix="/api")
 
 
 @app.get("/health")
