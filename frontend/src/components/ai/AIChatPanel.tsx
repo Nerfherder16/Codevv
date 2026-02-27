@@ -135,7 +135,7 @@ export function AIChatPanel() {
   );
 
   const handleToolUse = useCallback(
-    (tool: { name: string; input: Record<string, unknown> }) => {
+    (tool: { name: string; input?: Record<string, unknown> }) => {
       updateLastAssistant((prev) => ({
         ...prev,
         toolUses: [...(prev.toolUses || []), { ...tool }],
@@ -146,7 +146,7 @@ export function AIChatPanel() {
 
   const handleDone = useCallback(
     (result: {
-      session_id: string | null;
+      session_id?: string | null;
       model: string;
       conversation_id?: string;
     }) => {

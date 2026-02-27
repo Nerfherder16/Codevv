@@ -466,6 +466,16 @@ export interface Workspace {
   scope: WorkspaceScope;
   last_activity: string;
   created_at: string;
+  project_slug?: string | null;
+}
+
+export interface InviteInfo {
+  project_name: string;
+  inviter_name: string;
+  email: string;
+  role: string;
+  expires_at: string;
+  is_expired: boolean;
 }
 
 export interface TerminalSession {
@@ -475,4 +485,55 @@ export interface TerminalSession {
   owner_id: string;
   mode: TerminalMode;
   created_at: string;
+}
+
+// Organizations
+export type OrgRole = 'owner' | 'admin' | 'member';
+export type OrgMemberStatus = 'invited' | 'active' | 'suspended';
+export type ProjectPersona = 'developer' | 'creator' | 'operations' | 'finance';
+
+export interface Organization {
+  id: string;
+  name: string;
+  slug: string;
+  owner_id: string;
+  claude_auth_mode: string;
+  claude_subscription_type: string | null;
+  auto_add_to_projects: boolean;
+  default_persona: string;
+  created_at: string;
+}
+
+export interface OrgMember {
+  id: string;
+  user_id: string | null;
+  invite_email: string | null;
+  display_name: string | null;
+  email: string | null;
+  role: OrgRole;
+  default_persona: string;
+  status: OrgMemberStatus;
+  joined_at: string | null;
+}
+
+export interface OrgInviteDetail {
+  org_name: string;
+  org_slug: string;
+  invite_email: string;
+  role: OrgRole;
+  persona: string;
+  invited_by_name: string | null;
+}
+
+// Project Invites (legacy project-level invites)
+export interface ProjectInvite {
+  id: string;
+  project_id: string;
+  project_name: string;
+  email: string;
+  invited_by_name: string;
+  role: string;
+  status: string;
+  created_at: string;
+  expires_at: string;
 }

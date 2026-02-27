@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import Optional
 import uuid
 from datetime import datetime
 from app.models.project import ProjectRole
@@ -7,6 +8,7 @@ from app.models.project import ProjectRole
 class ProjectCreate(BaseModel):
     name: str
     description: str | None = None
+    org_id: Optional[uuid.UUID] = None
 
 
 class ProjectUpdate(BaseModel):
@@ -35,6 +37,7 @@ class ProjectResponse(BaseModel):
     slug: str
     description: str | None
     archived: bool
+    org_id: uuid.UUID | None = None
     created_by: uuid.UUID
     created_at: datetime
     updated_at: datetime

@@ -21,38 +21,54 @@ import { AuditPage } from "./pages/AuditPage";
 import { CompliancePage } from "./pages/CompliancePage";
 import { DocumentsPage } from "./pages/DocumentsPage";
 import { WorkspacePage } from "./pages/WorkspacePage";
+import { ChatPage } from "./pages/ChatPage";
+import { InviteAcceptPage } from "./pages/InviteAcceptPage";
+import { OrgSetupPage } from "./pages/OrgSetupPage";
 
 export default function App() {
   return (
-    <ProtectedRoute>
-      <Routes>
-        <Route path="/" element={<Navigate to="/projects" replace />} />
-        <Route path="/projects" element={<ProjectListPage />} />
-        {/* Canvas editor is outside AppShell — tldraw needs full-screen without overflow:auto ancestor (iOS Safari fix) */}
-        <Route
-          path="/projects/:projectId/canvas/:canvasId"
-          element={<CanvasEditorPage />}
-        />
-        <Route path="/projects/:projectId" element={<AppShell />}>
-          <Route index element={<ProjectOverviewPage />} />
-          <Route path="rules" element={<RulesPage />} />
-          <Route path="canvas" element={<CanvasPage />} />
-          <Route path="ideas" element={<IdeasPage />} />
-          <Route path="ideas/:ideaId" element={<IdeaDetailPage />} />
-          <Route path="scaffold" element={<ScaffoldPage />} />
-          <Route path="knowledge" element={<KnowledgeGraphPage />} />
-          <Route path="dependencies" element={<DependencyMapPage />} />
-          <Route path="pipeline" element={<PipelinePage />} />
-          <Route path="solana" element={<SolanaPage />} />
-          <Route path="rooms" element={<VideoRoomsPage />} />
-          <Route path="workspace" element={<WorkspacePage />} />
-          <Route path="deploy" element={<DeployPage />} />
-          <Route path="audit" element={<AuditPage />} />
-          <Route path="compliance" element={<CompliancePage />} />
-          <Route path="documents" element={<DocumentsPage />} />
-          <Route path="settings" element={<SettingsPage />} />
-        </Route>
-      </Routes>
-    </ProtectedRoute>
+    <Routes>
+      {/* Public routes — accessible without auth */}
+      <Route path="/invite/:token" element={<InviteAcceptPage />} />
+
+      {/* Protected routes */}
+      <Route
+        path="/*"
+        element={
+          <ProtectedRoute>
+            <Routes>
+              <Route path="/" element={<Navigate to="/projects" replace />} />
+              <Route path="/projects" element={<ProjectListPage />} />
+              <Route path="/orgs/new" element={<OrgSetupPage />} />
+              {/* Canvas editor outside AppShell — tldraw needs full-screen */}
+              <Route
+                path="/projects/:projectId/canvas/:canvasId"
+                element={<CanvasEditorPage />}
+              />
+              <Route path="/projects/:projectId" element={<AppShell />}>
+                <Route index element={<ProjectOverviewPage />} />
+                <Route path="rules" element={<RulesPage />} />
+                <Route path="canvas" element={<CanvasPage />} />
+                <Route path="ideas" element={<IdeasPage />} />
+                <Route path="ideas/:ideaId" element={<IdeaDetailPage />} />
+                <Route path="scaffold" element={<ScaffoldPage />} />
+                <Route path="knowledge" element={<KnowledgeGraphPage />} />
+                <Route path="dependencies" element={<DependencyMapPage />} />
+                <Route path="pipeline" element={<PipelinePage />} />
+                <Route path="solana" element={<SolanaPage />} />
+                <Route path="rooms" element={<VideoRoomsPage />} />
+                <Route path="workspace" element={<WorkspacePage />} />
+                <Route path="deploy" element={<DeployPage />} />
+                <Route path="audit" element={<AuditPage />} />
+                <Route path="compliance" element={<CompliancePage />} />
+                <Route path="documents" element={<DocumentsPage />} />
+                <Route path="settings" element={<SettingsPage />} />
+                <Route path="chat" element={<ChatPage />} />
+              </Route>
+            </Routes>
+          </ProtectedRoute>
+        }
+      />
+    </Routes>
   );
 }

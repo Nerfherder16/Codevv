@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import Optional
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
@@ -46,7 +47,6 @@ async def create_project(
     db: AsyncSession = Depends(get_db),
 ):
     slug = slugify(req.name)
-    # Ensure unique slug
     existing = await db.execute(select(Project).where(Project.slug == slug))
     if existing.scalar_one_or_none():
         slug = f"{slug}-{uuid.uuid4().hex[:6]}"
@@ -57,11 +57,11 @@ async def create_project(
         slug=slug,
         description=req.description,
         created_by=user.id,
+        org_id=req.org_id,
     )
     db.add(project)
     await db.flush()
 
-    # Add creator as owner
     member = ProjectMember(
         id=uuid.uuid4(),
         project_id=project.id,
@@ -74,6 +74,7 @@ async def create_project(
     return ProjectResponse(
         id=project.id, name=project.name, slug=project.slug,
         description=project.description, archived=project.archived,
+        org_id=project.org_id,
         created_by=project.created_by, created_at=project.created_at,
         updated_at=project.updated_at, member_count=1,
     )
@@ -81,20 +82,25 @@ async def create_project(
 
 @router.get("", response_model=list[ProjectResponse])
 async def list_projects(
+    org_id: Optional[uuid.UUID] = Query(default=None),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(
+    query = (
         select(Project)
         .join(ProjectMember, ProjectMember.project_id == Project.id)
-        .where(ProjectMember.user_id == user.id, Project.archived == False)
+        .where(ProjectMember.user_id == user.id, Project.archived == False)  # noqa: E712
         .options(selectinload(Project.members))
     )
+    if org_id is not None:
+        query = query.where(Project.org_id == org_id)
+
+    result = await db.execute(query)
     projects = result.scalars().unique().all()
     return [
         ProjectResponse(
             id=p.id, name=p.name, slug=p.slug, description=p.description,
-            archived=p.archived, created_by=p.created_by,
+            archived=p.archived, org_id=p.org_id, created_by=p.created_by,
             created_at=p.created_at, updated_at=p.updated_at,
             member_count=len(p.members),
         )
@@ -120,6 +126,7 @@ async def get_project(
     return ProjectDetailResponse(
         id=project.id, name=project.name, slug=project.slug,
         description=project.description, archived=project.archived,
+        org_id=project.org_id,
         created_by=project.created_by, created_at=project.created_at,
         updated_at=project.updated_at, member_count=len(members),
         members=members,
@@ -144,6 +151,7 @@ async def update_project(
     return ProjectResponse(
         id=project.id, name=project.name, slug=project.slug,
         description=project.description, archived=project.archived,
+        org_id=project.org_id,
         created_by=project.created_by, created_at=project.created_at,
         updated_at=project.updated_at, member_count=len(project.members),
     )

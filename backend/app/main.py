@@ -43,6 +43,92 @@ logger = structlog.get_logger()
 async def lifespan(app: FastAPI):
     logger.info("startup", app=settings.app_name, env=settings.environment)
     await init_db()
+
+    # Add new columns to existing users table (create_all doesn't ALTER)
+    from app.core.database import engine
+    from sqlalchemy import text as _text
+
+    async with engine.begin() as conn:
+        for col, default in [("is_admin", "false"), ("onboarding_completed", "false")]:
+            try:
+                await conn.execute(
+                    _text(
+                        f"ALTER TABLE users ADD COLUMN {col} BOOLEAN NOT NULL DEFAULT {default}"
+                    )
+                )
+                logger.info("migration.column_added", table="users", column=col)
+            except Exception:
+                pass  # Column already exists
+
+        # Same for project_invites and password_reset_tokens (new tables handled by create_all)
+
+    # Seed admin account
+    from app.core.database import async_session
+    from app.models.user import User
+    from app.models.project import Project, ProjectMember, ProjectRole
+    from app.core.security import hash_password
+    from app.services.org_service import create_personal_org
+    from sqlalchemy import select
+
+    async with async_session() as db:
+        result = await db.execute(select(User).where(User.is_admin == True).limit(1))  # noqa: E712
+        admin = result.scalar_one_or_none()
+        if not admin:
+            existing = await db.execute(
+                select(User).where(User.email == "trg1685@gmail.com")
+            )
+            admin = existing.scalar_one_or_none()
+            if admin:
+                admin.is_admin = True
+                admin.onboarding_completed = True
+                admin.password_hash = hash_password("lacetimcat1216")
+                logger.info("admin.upgraded", email="trg1685@gmail.com")
+            else:
+                admin = User(
+                    email="trg1685@gmail.com",
+                    display_name="nerfherder",
+                    password_hash=hash_password("lacetimcat1216"),
+                    is_admin=True,
+                    onboarding_completed=True,
+                )
+                db.add(admin)
+                await db.flush()
+                logger.info("admin.seeded", email="trg1685@gmail.com")
+            await db.commit()
+        else:
+            admin.password_hash = hash_password("lacetimcat1216")
+            await db.commit()
+            logger.info("admin.exists", email=admin.email)
+
+        # Ensure admin has a personal org (handles migration case for existing accounts)
+        await db.refresh(admin)
+        if admin.personal_org_id is None:
+            try:
+                await create_personal_org(admin, db)
+                logger.info("admin.personal_org_created", email=admin.email)
+            except Exception as e:
+                logger.warning("admin.personal_org_failed", error=str(e))
+
+        # Ensure admin is owner of all projects
+        all_projects = await db.execute(select(Project))
+        for project in all_projects.scalars().all():
+            membership = await db.execute(
+                select(ProjectMember).where(
+                    ProjectMember.project_id == project.id,
+                    ProjectMember.user_id == admin.id,
+                )
+            )
+            if not membership.scalar_one_or_none():
+                db.add(
+                    ProjectMember(
+                        project_id=project.id,
+                        user_id=admin.id,
+                        role=ProjectRole.owner,
+                    )
+                )
+                logger.info("admin.project_added", project=project.name)
+        await db.commit()
+
     yield
     logger.info("shutdown")
 
@@ -81,6 +167,16 @@ app.include_router(compliance.router, prefix="/api")
 app.include_router(documents.router, prefix="/api")
 app.include_router(workspaces.router, prefix="/api")
 app.include_router(ws_terminal.router)
+
+# Invites
+from app.api.routes import invites  # noqa: E402, F811
+
+app.include_router(invites.router, prefix="/api")
+
+# Organizations
+from app.api.routes import orgs  # noqa: E402
+
+app.include_router(orgs.router, prefix="/api/orgs")
 
 # Code-server reverse proxy (no /api prefix — routes are /workspace-proxy/...)
 from app.api.routes import ws_proxy  # noqa: E402
