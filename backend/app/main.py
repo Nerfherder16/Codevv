@@ -30,6 +30,7 @@ from app.api.routes import (
     comments,
     files,
     search,
+    sessions,
 )
 import structlog
 
@@ -199,6 +200,10 @@ app.include_router(tasks.my_tasks_router, prefix="/api")
 app.include_router(comments.router, prefix="/api")
 app.include_router(files.router, prefix="/api")
 app.include_router(search.router, prefix="/api")
+
+# Phase 5: Sessions
+app.include_router(sessions.router, prefix="/api")
+app.include_router(sessions.join_router, prefix="/api")
 
 
 @app.get("/health")

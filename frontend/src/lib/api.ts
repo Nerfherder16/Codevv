@@ -187,6 +187,24 @@ export const api = {
       request<void>(`/projects/${projectId}/rules/${ruleId}`, { method: 'DELETE' }),
   },
 
+  sessions: {
+    create: (projectId: string, data: { session_type: string; canvas_id?: string }) =>
+      request<import('../types').Session>(`/projects/${projectId}/sessions`, {
+        method: 'POST', body: JSON.stringify(data),
+      }),
+    list: (projectId: string) =>
+      request<import('../types').Session[]>(`/projects/${projectId}/sessions`),
+    end: (projectId: string, sessionId: string) =>
+      request<void>(`/projects/${projectId}/sessions/${sessionId}/end`, { method: 'POST' }),
+  },
+
+  joinCode: {
+    resolve: (code: string, mode = 'collaborate') =>
+      request<{ session_id: string; canvas_id: string; yjs_room: string; mode: string; viewer_token?: string; redirect: string }>(
+        `/sessions/join/${code}?mode=${mode}`
+      ),
+  },
+
   search: (projectId: string, q: string) =>
     request<{ results: Array<{ type: string; id: string; title: string; subtitle?: string }>; count: number }>(
       `/projects/${projectId}/search?q=${encodeURIComponent(q)}`

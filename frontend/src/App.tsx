@@ -25,12 +25,14 @@ import { ChatPage } from "./pages/ChatPage";
 import { TasksPage } from "./pages/TasksPage";
 import { InviteAcceptPage } from "./pages/InviteAcceptPage";
 import { OrgSetupPage } from "./pages/OrgSetupPage";
+import { SessionJoinPage } from "./pages/SessionJoinPage";
 
 export default function App() {
   return (
     <Routes>
       {/* Public routes — accessible without auth */}
       <Route path="/invite/:token" element={<InviteAcceptPage />} />
+      <Route path="/join/:code" element={<SessionJoinPage />} />
 
       {/* Protected routes */}
       <Route

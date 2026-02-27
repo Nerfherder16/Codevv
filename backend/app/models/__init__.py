@@ -67,3 +67,5 @@ __all__ = [
     "Comment",
     "Reference",
 ]
+
+from app.models.session import Session as CollabSession, SessionMember, SessionType, SessionStatus, SessionMemberRole  # noqa: F401

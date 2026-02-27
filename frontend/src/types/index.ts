@@ -479,6 +479,30 @@ export interface InviteInfo {
   is_expired: boolean;
 }
 
+export interface Session {
+  id: string;
+  project_id: string;
+  session_type: 'canvas' | 'workspace' | 'video' | 'thinking';
+  status: 'active' | 'ended';
+  canvas_id?: string | null;
+  workspace_id?: string | null;
+  livekit_room_name?: string | null;
+  yjs_room?: string | null;
+  host_user_id: string;
+  join_code?: string | null;
+  transcript?: string | null;
+  summary?: string | null;
+  created_at: string;
+  ended_at?: string | null;
+  members: Array<{
+    id: string;
+    session_id: string;
+    user_id: string;
+    role: 'host' | 'participant' | 'viewer';
+    joined_at: string;
+  }>;
+}
+
 export interface TerminalSession {
   id: string;
   workspace_id: string;

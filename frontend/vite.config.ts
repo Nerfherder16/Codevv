@@ -33,6 +33,11 @@ export default defineConfig({
         changeOrigin: true,
         ws: true,
       },
+      "/connect": {
+        target: "http://yjs-server:1234",
+        changeOrigin: true,
+        ws: true,
+      },
       "/callback": {
         target: "http://backend:8000",
         changeOrigin: true,

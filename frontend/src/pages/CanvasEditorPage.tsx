@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Tldraw, createShapeId, toRichText, Editor } from "@tldraw/tldraw";
+import { useSync } from "@tldraw/sync";
 import "@tldraw/tldraw/tldraw.css";
 import {
   ArrowLeft,
@@ -19,6 +20,8 @@ import {
 import { api } from "../lib/api";
 import type { CanvasDetail, CanvasComponent } from "../types";
 import { useToast } from "../contexts/ToastContext";
+import { SessionShareModal } from "../components/common/SessionShareModal";
+import type { Session } from "../types";
 import { Button } from "../components/common/Button";
 import { PageLoading } from "../components/common/LoadingSpinner";
 import { Input, Select, TextArea } from "../components/common/Input";
@@ -221,6 +224,23 @@ export function CanvasEditorPage() {
 
   const [canvas, setCanvas] = useState<CanvasDetail | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // tldraw collaborative sync — session-scoped yjs room
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const sessionId = searchParams.get("session");
+  const mode = (searchParams.get("mode") || "collaborate") as "draw" | "present" | "collaborate";
+
+  const wsProtocol = typeof window !== "undefined" && window.location.protocol === "https:" ? "wss:" : "ws:";
+  const wsHost = typeof window !== "undefined" ? window.location.host : "localhost:5173";
+  const yjsRoomId = sessionId ? `canvas:${canvasId}:session:${sessionId}` : `canvas:${canvasId}`;
+  const syncStore = useSync({
+    uri: `${wsProtocol}//${wsHost}/connect/${yjsRoomId}`,
+  });
+
+  const [activeSession, setActiveSession] = useState<Session | null>(null);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [startingSession, setStartingSession] = useState(false);
   const [panelOpen, setPanelOpen] = useState(true);
   const [hideTools, setHideTools] = useState(false);
   const editorRef = useRef<Editor | null>(null);
@@ -349,6 +369,26 @@ export function CanvasEditorPage() {
     }
   };
 
+  const handleStartSession = useCallback(async () => {
+    if (!projectId || !canvasId) return;
+    setStartingSession(true);
+    try {
+      const session = await api.sessions.create(projectId, {
+        session_type: "canvas",
+        canvas_id: canvasId,
+      });
+      setActiveSession(session);
+      setShowShareModal(true);
+      // Navigate to session URL to scope the Yjs room
+      navigate(`/projects/${projectId}/canvas/${canvasId}?session=${session.id}&mode=collaborate`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to start session";
+      toast(message, "error");
+    } finally {
+      setStartingSession(false);
+    }
+  }, [projectId, canvasId, navigate, toast]);
+
   if (loading) {
     return <PageLoading />;
   }
@@ -372,7 +412,61 @@ export function CanvasEditorPage() {
     );
   }
 
+  // Present mode — full-screen read-only, no chrome
+  if (mode === "present") {
+    return (
+      <div className="fixed inset-0 bg-[#0a0e14]" data-mode="present">
+        <Tldraw
+          store={syncStore}
+          hideUi={true}
+          onMount={(editor) => {
+            editorRef.current = editor;
+            editor.updateInstanceState({ isReadonly: true });
+            (document.body.style as any).cursor = "none";
+          }}
+        />
+        <div className="absolute bottom-4 right-4 flex items-center gap-2 bg-black/60 rounded-full px-3 py-1.5">
+          <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+          <span className="text-xs text-white/70 font-mono">Live</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Draw mode — touch-optimized for iPad/tablet
+  if (mode === "draw") {
+    return (
+      <div className="fixed inset-0 bg-[#0a0e14] touch-none">
+        <Tldraw
+          store={syncStore}
+          onMount={(editor) => {
+            editorRef.current = editor;
+            editor.setCurrentTool("draw");
+            if (canvas?.components.length) {
+              void (async () => {
+                try {
+                  const depGraph = await api.get<{ nodes: any[]; edges: DependencyEdge[] }>(`/projects/${projectId}/dependencies`);
+                  const canvasCompIds = new Set(canvas.components.map((c) => c.id));
+                  const relevantEdges = depGraph.edges.filter((e) => canvasCompIds.has(e.source_id) && canvasCompIds.has(e.target_id));
+                  populateTldrawShapes(editor, canvas.components, relevantEdges);
+                } catch {
+                  populateTldrawShapes(editor, canvas.components);
+                }
+              })();
+            }
+          }}
+        />
+        {sessionId && (
+          <div className="absolute top-3 right-3 bg-black/60 rounded-full px-3 py-1.5">
+            <span className="text-xs text-white/70 font-mono">{activeSession?.join_code || sessionId.slice(0, 8)}</span>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
+    <>
     <div className="fixed inset-0 flex flex-col bg-white dark:bg-gray-950">
       {/* Top bar */}
       <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 z-10 shrink-0">
@@ -413,6 +507,24 @@ export function CanvasEditorPage() {
             )}
             Components
           </Button>
+          {activeSession ? (
+            <button
+              onClick={() => setShowShareModal(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-teal-500/10 border border-teal-500/20 text-teal-400 text-xs font-medium hover:bg-teal-500/20 transition-colors"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
+              {activeSession.join_code}
+            </button>
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleStartSession}
+              loading={startingSession}
+            >
+              Share
+            </Button>
+          )}
         </div>
       </div>
 
@@ -422,6 +534,7 @@ export function CanvasEditorPage() {
         <div className="flex-1 relative">
           <div className="absolute inset-0">
             <Tldraw
+              store={syncStore}
               hideUi={hideTools}
               onMount={(editor) => {
                 editorRef.current = editor;
@@ -615,5 +728,12 @@ export function CanvasEditorPage() {
         )}
       </div>
     </div>
+    {showShareModal && activeSession && (
+      <SessionShareModal
+        session={activeSession}
+        onClose={() => setShowShareModal(false)}
+      />
+    )}
+    </>
   );
 }

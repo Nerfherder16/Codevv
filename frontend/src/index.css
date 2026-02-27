@@ -212,3 +212,24 @@ body {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+
+/* Present mode — high contrast for projection, hide tldraw UI */
+[data-mode="present"] .tl-background {
+  background: #0a0e14 !important;
+}
+
+[data-mode="present"] .tl-collaborator-cursor {
+  display: none !important;
+}
+
+/* Draw mode — touch-optimized for iPad / Apple Pencil */
+.touch-draw-mode .tl-toolbar {
+  transform: scale(1.2);
+  transform-origin: bottom center;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.touch-draw-mode .tl-toolbar__tools__button {
+  min-width: 44px;
+  min-height: 44px;
+}
