@@ -20,7 +20,12 @@ from app.schemas.knowledge import (
 )
 from app.api.routes.projects import get_project_with_access
 from app.services.embedding import get_embedding
+from app.services.recall import store_knowledge
+from app.models.project import Project
+import structlog
 import uuid
+
+logger = structlog.get_logger()
 
 router = APIRouter(prefix="/projects/{project_id}/knowledge", tags=["knowledge"])
 
@@ -35,7 +40,7 @@ async def create_entity(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    await get_project_with_access(project_id, user, db, min_role=ProjectRole.editor)
+    project = await get_project_with_access(project_id, user, db, min_role=ProjectRole.editor)
     entity = KnowledgeEntity(
         id=uuid.uuid4(),
         project_id=project_id,
@@ -52,6 +57,19 @@ async def create_entity(
         pass
     db.add(entity)
     await db.flush()
+
+    # Sync to Recall for semantic search by Claude
+    try:
+        await store_knowledge(
+            project_slug=project.slug,
+            name=req.name,
+            entity_type=req.entity_type,
+            description=req.description or req.name,
+            metadata={"entity_id": str(entity.id), "path": req.path, **(req.metadata_json or {})},
+        )
+    except Exception as e:
+        logger.warning("knowledge.recall_sync_failed", entity_id=str(entity.id), error=str(e))
+
     return EntityResponse.model_validate(entity)
 
 
@@ -78,7 +96,7 @@ async def update_entity(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    await get_project_with_access(project_id, user, db, min_role=ProjectRole.editor)
+    project = await get_project_with_access(project_id, user, db, min_role=ProjectRole.editor)
     result = await db.execute(
         select(KnowledgeEntity).where(
             KnowledgeEntity.id == entity_id, KnowledgeEntity.project_id == project_id
@@ -104,6 +122,19 @@ async def update_entity(
         except Exception:
             pass
     await db.flush()
+
+    # Re-sync to Recall with updated content
+    try:
+        await store_knowledge(
+            project_slug=project.slug,
+            name=entity.name,
+            entity_type=entity.entity_type,
+            description=entity.description or entity.name,
+            metadata={"entity_id": str(entity.id), "path": entity.path, **(entity.metadata_json or {})},
+        )
+    except Exception as e:
+        logger.warning("knowledge.recall_sync_failed", entity_id=str(entity.id), error=str(e))
+
     return EntityResponse.model_validate(entity)
 
 
