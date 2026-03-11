@@ -46,7 +46,8 @@ export function ProjectListPage() {
 
   const fetchProjects = useCallback(async () => {
     try {
-      const data = await api.get<Project[]>("/projects");
+      const orgParam = currentOrg ? `?org_id=${currentOrg.id}` : "";
+      const data = await api.get<Project[]>(`/projects${orgParam}`);
       setProjects(data);
     } catch (err) {
       const message =
@@ -55,7 +56,7 @@ export function ProjectListPage() {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [toast, currentOrg]);
 
   const fetchInvites = useCallback(async () => {
     try {
@@ -67,6 +68,7 @@ export function ProjectListPage() {
   }, []);
 
   useEffect(() => {
+    setLoading(true);
     fetchProjects();
     fetchInvites();
   }, [fetchProjects, fetchInvites]);
@@ -104,6 +106,7 @@ export function ProjectListPage() {
       const project = await api.post<Project>("/projects", {
         name: name.trim(),
         description: description.trim() || null,
+        org_id: currentOrg?.id || null,
       });
       toast("Project created!", "success");
       setModalOpen(false);
