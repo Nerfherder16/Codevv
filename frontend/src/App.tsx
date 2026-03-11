@@ -26,6 +26,7 @@ import { TasksPage } from "./pages/TasksPage";
 import { InviteAcceptPage } from "./pages/InviteAcceptPage";
 import { OrgSetupPage } from "./pages/OrgSetupPage";
 import { SessionJoinPage } from "./pages/SessionJoinPage";
+import { ProfilePage } from "./pages/ProfilePage";
 
 export default function App() {
   return (
@@ -42,6 +43,7 @@ export default function App() {
             <Routes>
               <Route path="/" element={<Navigate to="/projects" replace />} />
               <Route path="/projects" element={<ProjectListPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
               <Route path="/orgs/new" element={<OrgSetupPage />} />
               {/* Canvas editor outside AppShell — tldraw needs full-screen */}
               <Route

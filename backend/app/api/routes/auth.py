@@ -21,6 +21,7 @@ from app.schemas.auth import (
     TokenResponse,
     UserResponse,
     UserUpdateRequest,
+    ChangePasswordRequest,
 )
 from app.schemas.invite import PasswordResetRequest, PasswordResetConfirm
 from app.services.email import send_password_reset_email
@@ -106,6 +107,20 @@ async def update_me(
         user.onboarding_completed = req.onboarding_completed
     await db.flush()
     return user
+
+
+@router.post("/change-password", status_code=200)
+async def change_password(
+    req: ChangePasswordRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    if not user.password_hash or not verify_password(req.current_password, user.password_hash):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    user.password_hash = hash_password(req.new_password)
+    await db.flush()
+    logger.info("auth.password_changed", user_id=str(user.id))
+    return {"message": "Password changed successfully"}
 
 
 @router.post("/forgot-password", status_code=200)

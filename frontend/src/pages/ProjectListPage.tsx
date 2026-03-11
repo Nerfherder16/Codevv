@@ -249,7 +249,7 @@ export function ProjectListPage() {
                         <button
                           onClick={() => {
                             setProfileOpen(false);
-                            toast("Profile settings coming soon", "info");
+                            navigate("/profile");
                           }}
                           className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/[0.04] transition-colors"
                         >
@@ -259,7 +259,7 @@ export function ProjectListPage() {
                         <button
                           onClick={() => {
                             setProfileOpen(false);
-                            toast("Global settings coming soon", "info");
+                            navigate("/profile");
                           }}
                           className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/[0.04] transition-colors"
                         >
