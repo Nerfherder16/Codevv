@@ -7,6 +7,7 @@ from app.core.database import get_db
 from app.core.security import get_current_user
 from app.models.user import User
 from app.models.project import Project, ProjectMember, ProjectRole
+from app.models.organization import OrgMembership, OrgMemberStatus
 from app.schemas.project import (
     ProjectCreate, ProjectUpdate, ProjectMemberAdd,
     ProjectResponse, ProjectDetailResponse, MemberResponse,
@@ -46,6 +47,21 @@ async def create_project(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    # Validate org membership if assigning to an org
+    if req.org_id is not None:
+        membership = await db.execute(
+            select(OrgMembership).where(
+                OrgMembership.org_id == req.org_id,
+                OrgMembership.user_id == user.id,
+                OrgMembership.status == OrgMemberStatus.active,
+            )
+        )
+        if not membership.scalar_one_or_none():
+            raise HTTPException(
+                status_code=403,
+                detail="You must be an active member of the organization to create projects in it",
+            )
+
     slug = slugify(req.name)
     existing = await db.execute(select(Project).where(Project.slug == slug))
     if existing.scalar_one_or_none():
